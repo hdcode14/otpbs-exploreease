@@ -1,0 +1,17 @@
+# Database files
+database.db
+*.db
+*.db-journal
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.python-version
+
+# Environment
+.env
+.venv
+
+# Uploads
+static/uploads/
