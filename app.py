@@ -16,9 +16,10 @@ from reportlab.pdfbase.ttfonts import TTFont
 import io
 
 app = Flask(__name__, static_folder='static')
-app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'exploreease-secret-key-2025')
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['ADMIN_SECRET_KEY'] = 'admin123'  # Change this in production!
+app.config['ADMIN_SECRET_KEY'] = os.environ.get('ADMIN_SECRET_KEY', 'admin123')
+
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
@@ -28,9 +29,29 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+# ==================== DATABASE CONNECTION FUNCTION ====================
+def get_db_connection():
+    """
+    Universal database connection that works on both local and Render
+    Uses /tmp directory on Render which persists between requests
+    """
+    if 'RENDER' in os.environ:
+        # On Render - use /tmp directory which persists
+        db_path = '/tmp/database.db'
+        print("🟢 Using Render SQLite database at:", db_path)
+    else:
+        # Local development
+        db_path = 'database.db'
+        print("🟢 Using local SQLite database at:", db_path)
+    
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+# ==================== END DATABASE CONNECTION ====================
+
 def debug_database_state():
     """Debug function to check database state"""
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     try:
@@ -61,7 +82,7 @@ def debug_database_state():
 
 def verify_and_fix_payments_table():
     """Verify and fix the payments table if needed"""
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     try:
@@ -106,7 +127,7 @@ def create_payment_simple(booking_id, user_id, amount, payment_method, transacti
                 time.sleep(retry_delay * attempt)
                 print(f"⏳ Retrying after {retry_delay * attempt} seconds...")
             
-            conn = sqlite3.connect('database.db')
+            conn = get_db_connection()
             # More aggressive timeout settings
             conn.execute("PRAGMA busy_timeout = 10000")  # 10 seconds
             conn.execute("PRAGMA journal_mode=WAL")
@@ -181,7 +202,7 @@ def create_payment_safe(booking_id, user_id, amount, payment_method, transaction
     """
     Safe payment creation with type conversion and validation
     """
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     try:
@@ -237,7 +258,7 @@ def create_payment_safe(booking_id, user_id, amount, payment_method, transaction
         
 def update_database_schema():
     """Update database schema to add missing columns"""
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     try:
@@ -272,7 +293,7 @@ def update_database_schema():
         conn.close()
 
 def init_db():
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # Existing tables creation code...
@@ -486,7 +507,7 @@ class User(UserMixin):
 
 @login_manager.user_loader
 def load_user(user_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM users WHERE id = ?', (user_id,))
     user = c.fetchone()
@@ -519,7 +540,7 @@ def login():
         password = request.form['password']
         remember = True if request.form.get('remember') else False
         
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         c.execute('SELECT * FROM users WHERE email = ?', (email,))
         user_data = c.fetchone()
@@ -564,7 +585,7 @@ def register():
         password = request.form['password']
         admin_secret = request.form.get('admin_secret', '')  # Hidden admin field
         
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         
         try:
@@ -614,7 +635,7 @@ def logout():
 # Routes
 @app.route('/')
 def index():
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM packages WHERE is_active = TRUE LIMIT 6')
     featured_packages = c.fetchall()
@@ -628,7 +649,7 @@ def packages():
     sort = request.args.get('sort', 'name')
     search = request.args.get('search', '')
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     query = 'SELECT * FROM packages WHERE is_active = TRUE'
@@ -664,7 +685,7 @@ def packages():
 
 @app.route('/package/<int:package_id>')
 def package_detail(package_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM packages WHERE id = ?', (package_id,))
     package = c.fetchone()
@@ -684,7 +705,7 @@ def admin_packages():
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM packages ORDER BY created_at DESC')
     packages_list = c.fetchall()
@@ -724,7 +745,7 @@ def add_package():
             image_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
             image_file.save(image_path)
         
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         
         c.execute('''INSERT INTO packages 
@@ -749,7 +770,7 @@ def edit_package(package_id):
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     if request.method == 'POST':
@@ -820,7 +841,7 @@ def delete_package(package_id):
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # Check if package has any bookings
@@ -847,7 +868,7 @@ def toggle_package(package_id):
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     c.execute('SELECT is_active FROM packages WHERE id = ?', (package_id,))
@@ -867,7 +888,7 @@ def toggle_package(package_id):
 @app.route('/wishlist/add/<int:package_id>')
 @login_required
 def add_to_wishlist(package_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     try:
@@ -884,7 +905,7 @@ def add_to_wishlist(package_id):
 @app.route('/wishlist')
 @login_required
 def view_wishlist():
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('''SELECT p.* FROM packages p 
                  JOIN wishlist w ON p.id = w.package_id 
@@ -896,7 +917,7 @@ def view_wishlist():
 @app.route('/wishlist/remove/<int:package_id>')
 @login_required
 def remove_from_wishlist(package_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('DELETE FROM wishlist WHERE user_id = ? AND package_id = ?',
               (current_user.id, package_id))
@@ -919,7 +940,7 @@ def book_package(package_id):
         # Use separate database connections for booking and payment
         try:
             # STEP 1: Create booking in one transaction
-            conn_booking = sqlite3.connect('database.db')
+            conn_booking = get_db_connection()
             conn_booking.execute("PRAGMA busy_timeout=5000")
             c_booking = conn_booking.cursor()
             
@@ -981,7 +1002,7 @@ def book_package(package_id):
             return redirect(url_for('package_detail', package_id=package_id))
     
     # GET request - show booking form (existing code remains the same)
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT * FROM packages WHERE id = ?', (package_id,))
     package = c.fetchone()
@@ -999,7 +1020,7 @@ def process_payment(booking_id):
     print(f"🔍 PAYMENT ROUTE STARTED for booking_id: {booking_id}")
     
     try:
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         
         # Get booking and payment details
@@ -1142,7 +1163,7 @@ def admin_register():
             return render_template('admin_register.html')
         
         # Check if it's the first admin (no admins in system)
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         c.execute('SELECT COUNT(*) FROM users WHERE is_admin = TRUE')
         admin_count = c.fetchone()[0]
@@ -1172,7 +1193,7 @@ def admin_register():
 @app.route('/booking/confirm/<int:booking_id>')
 @login_required
 def booking_confirmation(booking_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # FIXED QUERY with proper column order
@@ -1256,7 +1277,7 @@ app.jinja_env.filters['safe_strftime'] = safe_strftime
 @app.route('/booking/details/<int:booking_id>')
 @login_required
 def booking_details(booking_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # FIXED QUERY with proper column selection and aliases
@@ -1331,7 +1352,7 @@ def utility_processor():
 @app.route('/booking/invoice/<int:booking_id>')
 @login_required
 def generate_invoice(booking_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # Get booking details
@@ -1528,7 +1549,7 @@ def generate_invoice(booking_id):
 @app.route('/booking/e-ticket/<int:booking_id>')
 @login_required
 def generate_e_ticket(booking_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # Get booking details
@@ -1745,7 +1766,7 @@ def generate_e_ticket(booking_id):
 @app.route('/my-bookings')
 @login_required
 def my_bookings():
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     conn.row_factory = sqlite3.Row  # This allows column access by name
     c = conn.cursor()
     c.execute('''SELECT b.*, p.name, p.destination, p.image 
@@ -1790,7 +1811,7 @@ def safe_format_date(date_value, format='%Y-%m-%d'):
 @app.route('/booking/refund/<int:booking_id>', methods=['GET', 'POST'])
 @login_required
 def request_refund(booking_id):
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     # First, ensure the refund_amount column exists
@@ -1898,7 +1919,7 @@ def admin():
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     c.execute('SELECT COUNT(*) FROM users')
@@ -1936,7 +1957,7 @@ def admin_users():
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('SELECT id, name, email, is_admin, created_at FROM users ORDER BY created_at DESC')
     users = c.fetchall()
@@ -1956,7 +1977,7 @@ def toggle_user_admin(user_id):
         flash('You cannot change your own admin status!', 'error')
         return redirect(url_for('admin_users'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     c.execute('SELECT is_admin FROM users WHERE id = ?', (user_id,))
@@ -2006,7 +2027,7 @@ def generate_report():
         story.append(Spacer(1, 20))
         
         # Get current stats
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         
         c.execute('SELECT COUNT(*) FROM users')
@@ -2103,7 +2124,7 @@ def admin_refunds():
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     c.execute('''SELECT rr.*, u.name as user_name, p.name as package_name, b.total_price
                  FROM refund_requests rr
@@ -2134,7 +2155,7 @@ def process_refund(refund_id, action):
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     c = conn.cursor()
     
     if action == 'approve':
@@ -2167,7 +2188,7 @@ def compare_packages():
     packages = []
     
     if package_ids:
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         c = conn.cursor()
         placeholders = ','.join('?' * len(package_ids))
         query = f'SELECT * FROM packages WHERE id IN ({placeholders}) AND is_active = TRUE'
@@ -2204,4 +2225,5 @@ if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
     
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port, debug=False)
