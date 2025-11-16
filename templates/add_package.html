@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Package - ExploreEase Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin') }}">Admin</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_packages') }}">Manage Packages</a></li>
+                    <li class="breadcrumb-item active">Add New Package</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0"><i class="fas fa-plus"></i> Add New Travel Package</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('add_package') }}" enctype="multipart/form-data" id="packageForm">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Basic Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Package Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required 
+                                       placeholder="e.g., Darjeeling Delight">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="destination" class="form-label">Destination *</label>
+                                <input type="text" class="form-control" id="destination" name="destination" required 
+                                       placeholder="e.g., Darjeeling, West Bengal">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Hill Station">Hill Station</option>
+                                    <option value="Wildlife">Wildlife</option>
+                                    <option value="Cultural">Cultural</option>
+                                    <option value="Nature">Nature</option>
+                                    <option value="Adventure">Adventure</option>
+                                    <option value="Trekking">Trekking</option>
+                                    <option value="Beach">Beach</option>
+                                    <option value="Heritage">Heritage</option>
+                                    <option value="Luxury">Luxury</option>
+                                    <option value="Leisure">Leisure</option>
+                                    <option value="Honeymoon">Honeymoon</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="duration" class="form-label">Duration *</label>
+                                <input type="text" class="form-control" id="duration" name="duration" required 
+                                       placeholder="e.g., 5D / 4N">
+                            </div>
+                        </div>
+
+                        <!-- Pricing & Rating -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Pricing & Rating</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹) *</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       min="0" step="0.01" required placeholder="14999.00">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="rating" class="form-label">Rating (1-5) *</label>
+                                <input type="number" class="form-control" id="rating" name="rating" 
+                                       min="1" max="5" step="0.1" required placeholder="4.7">
+                                <div class="form-text">Rating should be between 1.0 and 5.0</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="available_slots" class="form-label">Available Slots *</label>
+                                <input type="number" class="form-control" id="available_slots" name="available_slots" 
+                                       min="1" max="100" required value="50">
+                            </div>
+                        </div>
+
+                        <!-- Location Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Location Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude *</label>
+                                <input type="number" class="form-control" id="latitude" name="latitude" 
+                                       step="0.0001" required placeholder="27.0360">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude *</label>
+                                <input type="number" class="form-control" id="longitude" name="longitude" 
+                                       step="0.0001" required placeholder="88.2627">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="region" class="form-label">Region *</label>
+                                <select class="form-select" id="region" name="region" required>
+                                    <option value="">Select Region</option>
+                                    <option value="West Bengal">West Bengal</option>
+                                    <option value="Northeast">Northeast India</option>
+                                    <option value="Other India">Other India</option>
+                                    <option value="International">International</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Package Details -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Package Details</h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description *</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="4" required placeholder="Describe the package in detail..."></textarea>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="itinerary" class="form-label">Itinerary *</label>
+                                <textarea class="form-control" id="itinerary" name="itinerary" 
+                                          rows="4" required placeholder="Day 1: Arrival & Local Sightseeing|Day 2: Tiger Hill & Batasia Loop|..."></textarea>
+                                <div class="form-text">Separate each day with | character</div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="inclusions" class="form-label">Inclusions *</label>
+                                <textarea class="form-control" id="inclusions" name="inclusions" 
+                                          rows="3" required placeholder="Accommodation|Meals|Transport|Guide|Entry Fees"></textarea>
+                                <div class="form-text">Separate each inclusion with | character</div>
+                            </div>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Package Image</h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="image" class="form-label">Package Image *</label>
+                                <input type="file" class="form-control" id="image" name="image" 
+                                       accept="image/*" required>
+                                <div class="form-text">Upload a high-quality image for the package (JPEG, PNG, JPG)</div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="image-preview mb-3" id="imagePreview" style="display: none;">
+                                    <img id="previewImage" class="img-thumbnail" style="max-height: 200px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="button" class="btn btn-secondary me-md-2" 
+                                            onclick="window.history.back()">
+                                        <i class="fas fa-arrow-left"></i> Cancel
+                                    </button>
+                                    <button type="reset" class="btn btn-outline-secondary me-md-2">
+                                        <i class="fas fa-redo"></i> Reset
+                                    </button>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Create Package
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Form Guidelines -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Form Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small">
+                        <li>All fields marked with * are required</li>
+                        <li>Use high-quality images for better presentation</li>
+                        <li>Provide detailed and accurate descriptions</li>
+                        <li>Ensure pricing is competitive and realistic</li>
+                        <li>Double-check location coordinates</li>
+                        <li>Review all information before submitting</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image preview
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+
+    imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+
+    // Form validation
+    const form = document.getElementById('packageForm');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate rating
+        const rating = parseFloat(document.getElementById('rating').value);
+        if (rating < 1 || rating > 5) {
+            alert('Rating must be between 1.0 and 5.0');
+            isValid = false;
+        }
+
+        // Validate price
+        const price = parseFloat(document.getElementById('price').value);
+        if (price <= 0) {
+            alert('Price must be greater than 0');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
+    // Auto-fill sample data for testing (remove in production)
+    function fillSampleData() {
+        document.getElementById('name').value = 'Sample Package';
+        document.getElementById('destination').value = 'Sample Destination';
+        document.getElementById('category').value = 'Hill Station';
+        document.getElementById('duration').value = '3D / 2N';
+        document.getElementById('price').value = '9999';
+        document.getElementById('rating').value = '4.5';
+        document.getElementById('available_slots').value = '25';
+        document.getElementById('latitude').value = '27.0360';
+        document.getElementById('longitude').value = '88.2627';
+        document.getElementById('region').value = 'West Bengal';
+        document.getElementById('description').value = 'This is a sample package description for testing purposes.';
+        document.getElementById('itinerary').value = 'Day 1: Arrival & Sightseeing|Day 2: Adventure Activities|Day 3: Departure';
+        document.getElementById('inclusions').value = 'Accommodation|Meals|Transport|Guide';
+    }
+
+    // Uncomment the line below to enable sample data auto-fill for testing
+    // fillSampleData();
+});
+</script>
+
+<style>
+/* Form Styles - Matched with Travel Theme */
+.form-label {
+    font-weight: 600;
+    color: var(--charcoal-gray);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-control {
+    border: 2px solid var(--medium-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: var(--soft-white);
+}
+
+.form-control:focus {
+    border-color: var(--ocean-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 163, 177, 0.1);
+    background: var(--soft-white);
+}
+
+.form-select {
+    border: 2px solid var(--medium-gray);
+    border-radius: var(--radius-sm);
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    background: var(--soft-white) url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%232F3E46' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") no-repeat right 0.75rem center/16px 12px;
+}
+
+.form-select:focus {
+    border-color: var(--ocean-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 163, 177, 0.1);
+}
+
+.border-bottom {
+    border-color: var(--medium-gray) !important;
+}
+
+.image-preview {
+    border: 2px dashed var(--medium-gray);
+    padding: 2rem;
+    text-align: center;
+    border-radius: var(--radius-md);
+    background: var(--light-gray);
+    transition: all 0.3s ease;
+    min-height: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.image-preview:hover {
+    border-color: var(--ocean-teal);
+    background: rgba(15, 163, 177, 0.05);
+}
+
+.image-preview.has-image {
+    border-style: solid;
+    border-color: var(--forest-emerald);
+    background: rgba(42, 157, 143, 0.05);
+}
+
+.preview-image {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn-success {
+    background: var(--gradient-forest);
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(42, 157, 143, 0.3);
+}
+
+.btn-success:hover {
+    background: linear-gradient(135deg, var(--ocean-teal) 0%, var(--forest-emerald) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(42, 157, 143, 0.4);
+    color: white;
+}
+
+.btn-success:active {
+    transform: translateY(0);
+}
+
+/* Form Group Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-text {
+    color: var(--slate-blue);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+/* Custom File Input */
+.form-file {
+    position: relative;
+}
+
+.form-file-input {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: calc(1.5em + 1.5rem);
+    margin: 0;
+    opacity: 0;
+}
+
+.form-file-label {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    height: calc(1.5em + 1.5rem);
+    padding: 0.75rem 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--slate-blue);
+    background-color: var(--soft-white);
+    border: 2px solid var(--medium-gray);
+    border-radius: var(--radius-sm);
+    transition: all 0.3s ease;
+}
+
+.form-file-input:focus ~ .form-file-label {
+    border-color: var(--ocean-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 163, 177, 0.1);
+}
+
+/* Checkbox and Radio Styles */
+.form-check-input {
+    width: 1.1em;
+    height: 1.1em;
+    margin-top: 0.15em;
+    border: 2px solid var(--medium-gray);
+    transition: all 0.3s ease;
+}
+
+.form-check-input:checked {
+    background-color: var(--ocean-teal);
+    border-color: var(--ocean-teal);
+}
+
+.form-check-input:focus {
+    border-color: var(--ocean-teal);
+    box-shadow: 0 0 0 0.2rem rgba(15, 163, 177, 0.1);
+}
+
+.form-check-label {
+    color: var(--charcoal-gray);
+    font-size: 0.9rem;
+    margin-left: 0.5rem;
+}
+
+/* Input Group Styles */
+.input-group {
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.input-group-text {
+    background-color: var(--light-gray);
+    border: 2px solid var(--medium-gray);
+    color: var(--slate-blue);
+    font-weight: 500;
+}
+
+.input-group .form-control {
+    border-left: none;
+}
+
+.input-group .form-control:focus {
+    border-left: 2px solid var(--ocean-teal);
+}
+
+/* Validation Styles */
+.is-valid {
+    border-color: var(--forest-emerald) !important;
+}
+
+.is-valid:focus {
+    border-color: var(--forest-emerald) !important;
+    box-shadow: 0 0 0 0.2rem rgba(42, 157, 143, 0.1) !important;
+}
+
+.is-invalid {
+    border-color: var(--coral-blush) !important;
+}
+
+.is-invalid:focus {
+    border-color: var(--coral-blush) !important;
+    box-shadow: 0 0 0 0.2rem rgba(237, 106, 90, 0.1) !important;
+}
+
+.valid-feedback {
+    color: var(--forest-emerald);
+    font-size: 0.8rem;
+}
+
+.invalid-feedback {
+    color: var(--coral-blush);
+    font-size: 0.8rem;
+}
+
+/* Form Section Headers */
+.form-section {
+    background: linear-gradient(135deg, var(--light-gray) 0%, var(--soft-white) 100%);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid var(--ocean-teal);
+}
+
+.form-section h5 {
+    color: var(--charcoal-gray);
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+/* Required Field Indicator */
+.required::after {
+    content: " *";
+    color: var(--coral-blush);
+}
+
+/* Form Actions */
+.form-actions {
+    background: var(--light-gray);
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--medium-gray);
+}
+
+/* Responsive Form Design */
+@media (max-width: 768px) {
+    .form-section {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-actions {
+        padding: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn-success {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Form Loading State */
+.form-loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.form-loading .form-control {
+    background-color: var(--light-gray);
+}
+
+/* Success State */
+.form-success {
+    border-left: 4px solid var(--forest-emerald);
+    background: rgba(42, 157, 143, 0.05);
+}
+</style>
+{% endblock %}

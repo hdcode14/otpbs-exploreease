@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Home - ExploreEase{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 fw-bold">Discover Your Next Adventure</h1>
+                <p class="lead">Explore breathtaking destinations with our carefully curated travel packages. From serene beaches to majestic mountains, we've got you covered.</p>
+                <a href="{{ url_for('packages') }}" class="btn btn-light btn-lg">Explore Packages</a>
+            </div>
+            <div class="col-lg-6">
+                <img src="{{ url_for('static', filename='images/hero-travel.jpg') }}" alt="Travel" class="img-fluid rounded">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Packages -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2 class="text-center mb-3">Featured Packages</h2>
+                <p class="text-center text-muted">Handpicked experiences for your perfect getaway</p>
+            </div>
+        </div>
+        <div class="row">
+            {% for package in packages %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="card h-100 package-card">
+                    <img src="{{ url_for('static', filename='images/' + package[10]) }}" class="card-img-top" alt="{{ package[1] }}" style="height: 200px; object-fit: cover;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title">{{ package[1] }}</h5>
+                            <span class="badge bg-primary">{{ package[4] }}</span>
+                        </div>
+                        <p class="card-text text-muted">{{ package[9][:100] }}...</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="h5 text-primary">₹{{ "%.2f"|format(package[5]) }}</span>
+                            <span class="badge bg-warning text-dark">
+                                <i class="fas fa-star"></i> {{ package[6] }}
+                            </span>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-secondary">{{ package[3] }}</span>
+                            <span class="badge bg-info">{{ package[2] }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('package_detail', package_id=package[0]) }}" class="btn btn-outline-primary">View Details</a>
+                            {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('add_to_wishlist', package_id=package[0]) }}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-heart"></i> Add to Wishlist
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="text-center mt-4">
+            <a href="{{ url_for('packages') }}" class="btn btn-primary btn-lg">View All Packages</a>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt fa-3x text-primary mb-3"></i>
+                </div>
+                <h4>Secure Booking</h4>
+                <p class="text-muted">Your payments and personal information are always protected with us.</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-headset fa-3x text-primary mb-3"></i>
+                </div>
+                <h4>24/7 Support</h4>
+                <p class="text-muted">Our travel experts are available round the clock to assist you.</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div class="feature-icon">
+                    <i class="fas fa-tag fa-3x text-primary mb-3"></i>
+                </div>
+                <h4>Best Prices</h4>
+                <p class="text-muted">Get the best deals and prices guaranteed for all our packages.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add some interactive features
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to package cards
+    const packageCards = document.querySelectorAll('.package-card');
+    packageCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.transition = 'transform 0.3s ease';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
+{% endblock %}

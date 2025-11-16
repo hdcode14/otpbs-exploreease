@@ -1,0 +1,432 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Manage Users - ExploreEase Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-users"></i> User Management</h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('admin_register') }}" class="btn btn-success">
+                        <i class="fas fa-user-plus"></i> Add Admin User
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Manage all registered users and their permissions.</p>
+        </div>
+    </div>
+
+    <!-- Users Statistics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ users|length }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Admin Users
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ users|selectattr("3")|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-shield fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-info border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Regular Users
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ users|rejectattr("3")|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Active Users
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ users|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card admin-card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-list"></i> All Users</h5>
+            <span class="badge bg-light text-dark">{{ users|length }} users</span>
+        </div>
+        <div class="card-body">
+            {% if users %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Registration Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td><strong>#{{ user[0] }}</strong></td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-primary text-white me-3">
+                                        {{ user[1][0]|upper if user[1] else 'U' }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">{{ user[1] }}</div>
+                                        {% if user[0] == current_user.id %}
+                                        <small class="text-muted">(You)</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ user[2] }}</td>
+                            <td>
+                                {% if user[3] %}
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-user-shield"></i> Admin
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-user"></i> User
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">
+                                    {{ format_date(user[4]) if user[4] else 'N/A' }}
+                                </small>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if user[0] != current_user.id %}
+                                        {% if user[3] %}
+                                        <a href="{{ url_for('toggle_user_admin', user_id=user[0]) }}" 
+                                           class="btn btn-outline-warning" 
+                                           title="Remove Admin Privileges"
+                                           onclick="return confirm('Are you sure you want to remove admin privileges from {{ user[1] }}?')">
+                                            <i class="fas fa-user-times"></i> Remove Admin
+                                        </a>
+                                        {% else %}
+                                        <a href="{{ url_for('toggle_user_admin', user_id=user[0]) }}" 
+                                           class="btn btn-outline-success" 
+                                           title="Make Admin"
+                                           onclick="return confirm('Are you sure you want to make {{ user[1] }} an admin?')">
+                                            <i class="fas fa-user-shield"></i> Make Admin
+                                        </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted small">Current User</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                <h4 class="text-muted">No Users Found</h4>
+                <p class="text-muted">There are no registered users in the system yet.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- User Management Tips -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card admin-card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-lightbulb"></i> User Management Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Only grant admin access to trusted users
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Regular users can only book packages and manage their own data
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Admins have full access to all system features
+                        </li>
+                        <li class="mb-0">
+                            <i class="fas fa-check text-success me-2"></i>
+                            You cannot change your own admin status
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card admin-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Important Notes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-0">
+                        <h6><i class="fas fa-shield-alt"></i> Security Notice</h6>
+                        <p class="small mb-0">
+                            Admin users have complete access to the system including user data, 
+                            financial information, and system settings. Please be cautious when 
+                            granting admin privileges.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add search functionality
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search users by name or email...';
+    searchInput.className = 'form-control mb-3';
+    searchInput.style.maxWidth = '300px';
+    
+    const table = document.getElementById('usersTable');
+    if (table) {
+        // Insert search input before the table
+        const tableParent = table.closest('.card-body');
+        tableParent.insertBefore(searchInput, table);
+        
+        searchInput.addEventListener('keyup', function() {
+            const filter = this.value.toLowerCase();
+            const rows = table.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                const matches = name.includes(filter) || email.includes(filter);
+                row.style.display = matches ? '' : 'none';
+            });
+        });
+    }
+
+    // Add confirmation for admin role changes
+    const adminToggleLinks = document.querySelectorAll('a[href*="toggle_user_admin"]');
+    adminToggleLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            const action = this.textContent.trim();
+            const userName = this.closest('tr').querySelector('.fw-bold').textContent;
+            
+            if (!confirm(`Are you sure you want to ${action.toLowerCase()} for ${userName}?`)) {
+                e.preventDefault();
+            }
+        });
+    });
+
+    // Add row highlighting on hover
+    const tableRows = document.querySelectorAll('#usersTable tbody tr');
+    tableRows.forEach(row => {
+        row.addEventListener('mouseenter', function() {
+            this.style.backgroundColor = 'rgba(0, 123, 255, 0.05)';
+        });
+        row.addEventListener('mouseleave', function() {
+            this.style.backgroundColor = '';
+        });
+    });
+});
+
+// Simple export function (basic CSV)
+function exportUsersData() {
+    const table = document.getElementById('usersTable');
+    if (!table) return;
+    
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    // Headers
+    const headers = [];
+    const headerCells = rows[0].querySelectorAll('th');
+    for (let i = 0; i < headerCells.length - 1; i++) { // Exclude actions column
+        headers.push(headerCells[i].innerText);
+    }
+    csv.push(headers.join(','));
+    
+    // Data rows
+    for (let i = 1; i < rows.length; i++) {
+        if (rows[i].style.display !== 'none') { // Only export visible rows
+            let row = [], cols = rows[i].querySelectorAll('td');
+            
+            for (let j = 0; j < cols.length - 1; j++) { // Exclude actions column
+                let text = cols[j].innerText;
+                // Handle commas in text by wrapping in quotes
+                if (text.includes(',')) {
+                    text = '"' + text + '"';
+                }
+                row.push(text);
+            }
+            
+            csv.push(row.join(','));
+        }
+    }
+
+    // Download CSV file
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'exploreease_users_' + new Date().toISOString().split('T')[0] + '.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Add export button functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Create export button
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'btn btn-outline-success btn-sm ms-2';
+    exportBtn.innerHTML = '<i class="fas fa-download"></i> Export CSV';
+    exportBtn.onclick = exportUsersData;
+    
+    // Add export button to header
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader) {
+        cardHeader.querySelector('.d-flex').appendChild(exportBtn);
+    }
+});
+</script>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.table th {
+    background-color: #f8f9fa;
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.btn-group-sm .btn {
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.875rem;
+    }
+    
+    .avatar-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+    
+    .table th:nth-child(1),
+    .table td:nth-child(1) {
+        display: none; /* Hide ID column on mobile */
+    }
+}
+
+/* Hover effects */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    transition: background-color 0.2s ease;
+}
+
+/* Badge styles */
+.badge {
+    font-size: 0.75em;
+    padding: 0.35em 0.65em;
+}
+
+/* Search input styling */
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+</style>
+{% endblock %}

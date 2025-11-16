@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Login - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-sign-in-alt"></i> Login to Your Account</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('login') }}">
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" required 
+                                   placeholder="Enter your email">
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required 
+                                   placeholder="Enter your password">
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Login</button>
+                        </div>
+                    </form>
+                    <div class="text-center mt-3">
+                        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            Demo Admin Credentials:<br>
+                            Email: admin@exploreease.com<br>
+                            Password: admin123
+                        </small>
+                    </div>
+
+                    <!-- Add this after the demo credentials in login.html -->
+                    <div class="text-center mt-2">
+                        <small class="text-muted">
+                            <a href="{{ url_for('admin_register') }}" class="text-danger">
+                                <i class="fas fa-user-shield"></i> Admin Registration
+                            </a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Clear cache and prevent back button issues
+if (performance.navigation.type === 1) {
+    // Page was reloaded - force fresh load
+    window.location.href = "{{ url_for('login') }}?t=" + new Date().getTime();
+}
+
+// Clear any stored data
+sessionStorage.clear();
+localStorage.removeItem('userData');
+
+// Prevent back navigation to cached authenticated pages
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+    history.go(1);
+};
+
+// Force CSS reload
+document.querySelectorAll('link[rel="stylesheet"]').forEach(link => {
+    const href = link.href;
+    if (href) {
+        const newHref = href.split('?')[0] + '?v=' + new Date().getTime();
+        link.href = newHref;
+    }
+});
+</script>
+{% endblock %}

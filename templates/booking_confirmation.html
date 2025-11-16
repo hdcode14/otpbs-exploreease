@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Confirmation - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12 text-center">
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle fa-3x mb-3"></i>
+                <h1>Booking Confirmed!</h1>
+                <p class="lead">Your booking has been successfully confirmed.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-receipt"></i> Booking Details</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Travel Details</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Package:</strong></td>
+                                    <td>{{ booking.package_name if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Destination:</strong></td>
+                                    <td>{{ booking.destination if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Duration:</strong></td>
+                                    <td>{{ booking.duration if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Travel Date:</strong></td>
+                                    <td>{{ booking.travel_date if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Travelers:</strong></td>
+                                    <td>{{ booking.guests if booking else 'N/A' }} person(s)</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Payment Details</h5>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Booking ID:</strong></td>
+                                    <td>#{{ booking.id if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Transaction ID:</strong></td>
+                                    <td>{{ booking.transaction_id if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Payment Method:</strong></td>
+                                    <td>{{ booking.payment_method|title if booking else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Amount:</strong></td>
+                                    <td class="text-success fw-bold">
+                                        ₹{{ "%.2f"|format(booking.total_price) if booking and booking.total_price else '0.00' }}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Booked On:</strong></td>
+                                    <td>
+                                        {{ booking.booking_date | safe_strftime('%Y-%m-%d') if booking and booking.booking_date else 'N/A' }}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-download"></i> Download Documents</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('generate_e_ticket', booking_id=booking.id) if booking else '#' }}" 
+                               class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-ticket-alt fa-2x mb-2"></i><br>
+                                E-Ticket
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('generate_invoice', booking_id=booking.id) if booking else '#' }}" 
+                               class="btn btn-outline-success btn-lg w-100">
+                                <i class="fas fa-file-invoice fa-2x mb-2"></i><br>
+                                Invoice
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('booking_details', booking_id=booking.id) if booking else '#' }}" 
+                               class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-info-circle fa-2x mb-2"></i><br>
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="{{ url_for('my_bookings') }}" class="btn btn-primary me-2">
+                    <i class="fas fa-suitcase"></i> My Bookings
+                </a>
+                <a href="{{ url_for('packages') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-search"></i> Browse More Packages
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

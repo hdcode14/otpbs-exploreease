@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Packages - ExploreEase Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-box"></i> Manage Packages</h1>
+                <a href="{{ url_for('add_package') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Package
+                </a>
+            </div>
+            <p class="text-muted">Manage all travel packages in the system.</p>
+        </div>
+    </div>
+
+    <!-- Packages Table -->
+    <div class="card">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">All Packages ({{ packages|length }})</h5>
+            <div class="btn-group">
+                <button class="btn btn-sm btn-light" onclick="filterPackages('all')">All</button>
+                <button class="btn btn-sm btn-outline-light" onclick="filterPackages('active')">Active</button>
+                <button class="btn btn-sm btn-outline-light" onclick="filterPackages('inactive')">Inactive</button>
+            </div>
+        </div>
+        <div class="card-body">
+            {% if packages %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="packagesTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Image</th>
+                            <th>Package Name</th>
+                            <th>Destination</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Rating</th>
+                            <th>Slots</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for package in packages %}
+                        <tr class="package-row" data-status="{{ 'active' if package[15] else 'inactive' }}">
+                            <td>{{ package[0] }}</td>
+                            <td>
+                                <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                                     alt="{{ package[1] }}" class="img-thumbnail" style="width: 60px; height: 40px; object-fit: cover;">
+                            </td>
+                            <td>
+                                <strong>{{ package[1] }}</strong>
+                                <br>
+                                <small class="text-muted">{{ package[4] }}</small>
+                            </td>
+                            <td>{{ package[2] }}</td>
+                            <td>
+                                <span class="badge bg-info">{{ package[3] }}</span>
+                            </td>
+                            <td>
+                                <strong class="text-primary">₹{{ "%.2f"|format(package[5]) }}</strong>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star"></i> {{ package[6] }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{% if package[14] > 10 %}success{% elif package[14] > 0 %}warning{% else %}danger{% endif %}">
+                                    {{ package[14] }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if package[15] %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <td><small class="text-muted">{{ package[16] | safe_strftime('%Y-%m-%d') }}</small></td>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('edit_package', package_id=package[0]) }}" 
+                                       class="btn btn-outline-primary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('toggle_package', package_id=package[0]) }}" 
+                                       class="btn btn-{% if package[15] %}outline-warning{% else %}outline-success{% endif %}"
+                                       title="{% if package[15] %}Deactivate{% else %}Activate{% endif %}">
+                                        <i class="fas fa-{% if package[15] %}pause{% else %}play{% endif %}"></i>
+                                    </a>
+                                    <a href="{{ url_for('delete_package', package_id=package[0]) }}" 
+                                       class="btn btn-outline-danger" 
+                                       onclick="return confirm('Are you sure you want to delete this package?')"
+                                       title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-box fa-4x text-muted mb-3"></i>
+                <h4>No Packages Found</h4>
+                <p class="text-muted">Get started by adding your first travel package.</p>
+                <a href="{{ url_for('add_package') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add New Package
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    {% if packages %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <h6>Bulk Actions</h6>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-success" onclick="bulkAction('activate')">
+                    <i class="fas fa-play"></i> Activate Selected
+                </button>
+                <button type="button" class="btn btn-outline-warning" onclick="bulkAction('deactivate')">
+                    <i class="fas fa-pause"></i> Deactivate Selected
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="bulkAction('delete')">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+            </div>
+            <small class="text-muted ms-3">Select packages using checkboxes in the table.</small>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterPackages(status) {
+    const rows = document.querySelectorAll('.package-row');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+
+    // Update button states
+    document.querySelectorAll('.card-header .btn').forEach(btn => {
+        btn.classList.remove('btn-light');
+        btn.classList.add('btn-outline-light');
+    });
+    event.target.classList.remove('btn-outline-light');
+    event.target.classList.add('btn-light');
+}
+
+function bulkAction(action) {
+    const selectedPackages = Array.from(document.querySelectorAll('input[type="checkbox"]:checked'))
+        .map(checkbox => checkbox.value);
+    
+    if (selectedPackages.length === 0) {
+        alert('Please select at least one package.');
+        return;
+    }
+
+    if (action === 'delete' && !confirm(`Are you sure you want to delete ${selectedPackages.length} package(s)?`)) {
+        return;
+    }
+
+    // In a real app, this would send an AJAX request
+    alert(`This would ${action} ${selectedPackages.length} package(s) in a real implementation.`);
+}
+
+// Add checkboxes to table rows
+document.addEventListener('DOMContentLoaded', function() {
+    const table = document.getElementById('packagesTable');
+    if (table) {
+        // Add checkbox column to header
+        const headerRow = table.querySelector('thead tr');
+        const checkboxHeader = document.createElement('th');
+        checkboxHeader.innerHTML = '<input type="checkbox" id="selectAll">';
+        headerRow.insertBefore(checkboxHeader, headerRow.firstChild);
+
+        // Add checkboxes to each row
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const checkboxCell = document.createElement('td');
+            checkboxCell.innerHTML = `<input type="checkbox" value="${row.cells[1].textContent}">`;
+            row.insertBefore(checkboxCell, row.firstChild);
+        });
+
+        // Select all functionality
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = table.querySelectorAll('tbody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+
+    // Add search functionality
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search packages...';
+    searchInput.className = 'form-control mb-3';
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.package-row');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    document.querySelector('.card-body').insertBefore(searchInput, document.querySelector('.table-responsive'));
+});
+</script>
+
+<style>
+.package-row:hover {
+    background-color: #f8f9fa;
+}
+
+.img-thumbnail {
+    padding: 0;
+    border: 1px solid #dee2e6;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+#selectAll {
+    margin: 0;
+}
+</style>
+{% endblock %}

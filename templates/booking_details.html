@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Booking Details - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('my_bookings') }}">My Bookings</a></li>
+                    <li class="breadcrumb-item active">Booking Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-receipt"></i> Booking Details #{{ booking.id }}</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Status Badge -->
+                    <div class="text-center mb-4">
+                        {% if booking.status == 'Confirmed' %}
+                            <span class="badge bg-success fs-6 p-2">CONFIRMED</span>
+                        {% elif booking.status == 'Pending' %}
+                            <span class="badge bg-warning fs-6 p-2">PENDING</span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6 p-2">{{ booking.status|upper }}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Travel Details -->
+                    <div class="section mb-4">
+                        <h5 class="section-title"><i class="fas fa-map-marked-alt"></i> Travel Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Package:</strong> {{ booking.package_name }}</p>
+                                <p><strong>Destination:</strong> {{ booking.destination }}</p>
+                                <p><strong>Duration:</strong> {{ booking.duration }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Travel Date:</strong> {{ booking.travel_date }}</p>
+                                <p><strong>Travelers:</strong> {{ booking.guests }} person(s)</p>
+                                <p><strong>Booking Date:</strong> {{ booking.booking_date|safe_strftime }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Details -->
+                    <div class="section mb-4">
+                        <h5 class="section-title"><i class="fas fa-credit-card"></i> Payment Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Booking ID:</strong> #{{ booking.id }}</p>
+                                <p><strong>Transaction ID:</strong> {{ booking.transaction_id }}</p>
+                                <p><strong>Payment Method:</strong> {{ booking.payment_method|title }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Total Amount:</strong> ₹{{ "%.2f"|format(booking.total_price) }}</p>
+                                <p><strong>Payment Status:</strong> 
+                                    {% if booking.payment_status == 'Paid' %}
+                                        <span class="badge bg-success">PAID</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">{{ booking.payment_status|upper }}</span>
+                                    {% endif %}
+                                </p>
+                                <p><strong>Payment Date:</strong> {{ booking.payment_date|safe_strftime }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Package Inclusions -->
+                    {% if booking.inclusions %}
+                    <div class="section mb-4">
+                        <h5 class="section-title"><i class="fas fa-check-circle"></i> Package Inclusions</h5>
+                        <div class="row">
+                            <div class="col-12">
+                                {% set inclusions = booking.inclusions.split('|') %}
+                                <div class="row">
+                                    {% for inclusion in inclusions %}
+                                    <div class="col-md-6 mb-2">
+                                        <i class="fas fa-check text-success me-2"></i>{{ inclusion }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Itinerary Preview -->
+                    {% if booking.itinerary %}
+                    <div class="section mb-4">
+                        <h5 class="section-title"><i class="fas fa-route"></i> Itinerary Preview</h5>
+                        <div class="itinerary-preview" style="max-height: 200px; overflow-y: auto;">
+                            {% set days = booking.itinerary.split('|') %}
+                            {% for day in days %}
+                            <div class="itinerary-day p-2 border-bottom">
+                                <strong>{{ day.split(':')[0] if ':' in day else day }}</strong>
+                                {% if ':' in day %}
+                                <br><span class="text-muted">{{ day.split(':')[1] }}</span>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Action Buttons -->
+                    <div class="section">
+                        <h5 class="section-title"><i class="fas fa-download"></i> Documents</h5>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                            <a href="{{ url_for('generate_e_ticket', booking_id=booking.id) }}" 
+                               class="btn btn-success me-md-2">
+                                <i class="fas fa-ticket-alt"></i> Download E-Ticket
+                            </a>
+                            <a href="{{ url_for('generate_invoice', booking_id=booking.id) }}" 
+                               class="btn btn-outline-primary">
+                                <i class="fas fa-file-invoice"></i> Download Invoice
+                            </a>
+                            {% if booking.status == 'Confirmed' %}
+                            <a href="{{ url_for('request_refund', booking_id=booking.id) }}" 
+                               class="btn btn-outline-warning ms-md-2">
+                                <i class="fas fa-undo"></i> Request Refund
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6><i class="fas fa-headset"></i> Need Help?</h6>
+                    <p class="mb-2">Contact our 24/7 customer support</p>
+                    <p class="mb-1"><strong>Phone:</strong> +91 22 1234 5678</p>
+                    <p class="mb-1"><strong>Email:</strong> support@exploreease.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.section {
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title {
+    color: #0d6efd;
+    border-bottom: 2px solid #0d6efd;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.itinerary-day:hover {
+    background-color: #f8f9fa;
+    transition: background-color 0.3s ease;
+}
+</style>
+{% endblock %}

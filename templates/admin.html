@@ -1,0 +1,693 @@
+{% extends "admin_base.html" %}
+
+{% block title %}Admin Dashboard - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('admin_packages') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-box"></i> Manage Packages
+                    </a>
+                    <a href="{{ url_for('admin_refunds') }}" class="btn btn-outline-warning">
+                        <i class="fas fa-undo"></i> Refund Requests
+                    </a>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-info">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                </div>
+            </div>
+            <p class="text-muted">Welcome back, {{ current_user.name }}! Here's what's happening with your travel business.</p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Total Users
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ user_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Total Bookings
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ booking_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-suitcase fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-info border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Total Packages
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ package_count }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card admin-card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Total Revenue
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                ₹{{ "%.2f"|format(recent_bookings|sum(attribute=5) if recent_bookings else 0) }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Bookings -->
+        <div class="col-lg-8 mb-4">
+            <div class="card admin-card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Bookings</h5>
+                    <a href="{{ url_for('my_bookings') }}" class="btn btn-sm btn-light">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if recent_bookings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Booking ID</th>
+                                        <th>User</th>
+                                        <th>Package</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in recent_bookings %}
+                                    <tr>
+                                        <td><strong>#{{ booking[0] }}</strong></td>
+                                        <td>{{ booking[9] }}</td>
+                                        <td>{{ booking[10] }}</td>
+                                        <td>₹{{ "%.2f"|format(booking[5]|float) }}</td>
+                                        <td>
+                                            <span class="badge status-badge bg-{% if booking[6] == 'Confirmed' %}success
+                                                {% elif booking[6] == 'Pending' %}warning
+                                                {% elif booking[6] == 'Cancelled' %}danger
+                                                {% else %}secondary{% endif %}">
+                                                {{ booking[6] }}
+                                            </span>
+                                        </td>
+                                        <td>{{ format_date(booking[8]) }}</td>
+                                        <td>
+                                            <a href="{{ url_for('booking_details', booking_id=booking[0]) }}" 
+                                               class="btn btn-sm btn-outline-primary" 
+                                               title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-suitcase fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No recent bookings found.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions & System Status -->
+        <div class="col-lg-4 mb-4">
+            <!-- Quick Actions -->
+            <div class="card admin-card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('add_package') }}" class="btn btn-primary quick-action">
+                            <i class="fas fa-plus"></i> Add New Package
+                        </a>
+                        <a href="{{ url_for('admin_packages') }}" class="btn btn-outline-primary quick-action">
+                            <i class="fas fa-edit"></i> Manage Packages
+                        </a>
+                        <a href="{{ url_for('admin_refunds') }}" class="btn btn-outline-warning quick-action">
+                            <i class="fas fa-undo"></i> Refund Requests
+                        </a>
+                        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-info quick-action">
+                            <i class="fas fa-users"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('generate_report') }}" class="btn btn-outline-dark quick-action" id="generateReportBtn">
+                            <i class="fas fa-chart-bar"></i> Generate Report
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Status -->
+            <div class="card admin-card mt-4">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="fas fa-server"></i> System Status</h5>
+                </div>
+                <div class="card-body">
+                    <div class="system-status">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded bg-light">
+                            <span class="fw-bold">Database</span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded bg-light">
+                            <span class="fw-bold">Payment Gateway</span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 rounded bg-light">
+                            <span class="fw-bold">Email Service</span>
+                            <span class="badge bg-success">Online</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded bg-light">
+                            <span class="fw-bold">Last Backup</span>
+                            <span class="text-muted small">{{ now.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card admin-card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-history"></i> Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-list">
+                        <div class="activity-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">New User Registration</span>
+                                <small class="text-muted">Just now</small>
+                            </div>
+                            <small class="text-muted">1 new user signed up</small>
+                        </div>
+                        <div class="activity-item mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">Booking Confirmed</span>
+                                <small class="text-muted">5 min ago</small>
+                            </div>
+                            <small class="text-muted">Package: Darjeeling Delight</small>
+                        </div>
+                        <div class="activity-item">
+                            <div class="d-flex justify-content-between">
+                                <span class="fw-bold">Package Updated</span>
+                                <small class="text-muted">1 hour ago</small>
+                            </div>
+                            <small class="text-muted">Goa Beach Escape modified</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Stats Row -->
+    <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+            <div class="card admin-card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Package Categories</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-chart-pie fa-3x text-warning mb-3"></i>
+                        <p class="text-muted">Category distribution chart would appear here</p>
+                        <small class="text-muted">Integration with chart library needed</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-4">
+            <div class="card admin-card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-bell"></i> Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-bell fa-3x text-secondary mb-3"></i>
+                        <p class="text-muted">No new notifications</p>
+                        <small class="text-muted">All systems are running smoothly</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to admin cards
+    const adminCards = document.querySelectorAll('.admin-card');
+    adminCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        });
+    });
+
+    // Quick action button effects
+    const quickActions = document.querySelectorAll('.quick-action');
+    quickActions.forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.style.transform = 'scale(1.02)';
+        });
+        btn.addEventListener('mouseleave', function() {
+            this.style.transform = 'scale(1)';
+        });
+    });
+
+    // Generate report button handler
+    const generateReportBtn = document.getElementById('generateReportBtn');
+    if (generateReportBtn) {
+        generateReportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Report...';
+            this.disabled = true;
+
+            // Redirect to report generation
+            window.location.href = "{{ url_for('generate_report') }}";
+            
+            // Reset button after a delay (in case redirect fails)
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 5000);
+        });
+    }
+
+    // Auto-refresh dashboard every 60 seconds
+    setInterval(() => {
+        console.log('Auto-refreshing admin dashboard...');
+        // You can implement AJAX refresh here if needed
+        // location.reload(); // Simple refresh
+    }, 60000);
+
+    // Add click animation to status badges
+    const statusBadges = document.querySelectorAll('.status-badge');
+    statusBadges.forEach(badge => {
+        badge.addEventListener('click', function() {
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+});
+
+// Keyboard shortcuts for admin
+document.addEventListener('keydown', function(e) {
+    // Ctrl + Shift + P - Add Package
+    if (e.ctrlKey && e.shiftKey && e.key === 'P') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('add_package') }}";
+    }
+    // Ctrl + Shift + R - Refund Requests
+    if (e.ctrlKey && e.shiftKey && e.key === 'R') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('admin_refunds') }}";
+    }
+    // Ctrl + Shift + D - Dashboard
+    if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        window.location.href = "{{ url_for('admin') }}";
+    }
+});
+</script>
+
+<style>
+/* Professional Admin Dashboard Styles - Engaging yet Clean */
+.admin-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    background: white;
+    border-left: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(15, 163, 177, 0.02) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-card:hover::before {
+    opacity: 1;
+}
+
+.admin-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+    border-left-color: var(--ocean-teal);
+}
+
+.stat-card {
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid rgba(15, 163, 177, 0.1);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: var(--gradient-ocean);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover::after {
+    transform: scaleX(1);
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(15, 163, 177, 0.1);
+    border-color: rgba(15, 163, 177, 0.2);
+}
+
+.system-status {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: rgba(15, 163, 177, 0.05);
+    border: 1px solid rgba(15, 163, 177, 0.1);
+    transition: all 0.2s ease;
+}
+
+.system-status:hover {
+    background: rgba(15, 163, 177, 0.08);
+    transform: scale(1.02);
+}
+
+.quick-action {
+    transition: all 0.3s ease;
+    background: white;
+    border: 1px solid rgba(15, 163, 177, 0.1);
+    border-radius: 10px;
+    padding: 1.25rem;
+    text-decoration: none;
+    color: var(--charcoal-gray);
+    display: block;
+    position: relative;
+}
+
+.quick-action::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: var(--gradient-ocean);
+    transform: scaleY(0);
+    transition: transform 0.3s ease;
+}
+
+.quick-action:hover::before {
+    transform: scaleY(1);
+}
+
+.quick-action:hover {
+    transform: translateX(4px);
+    box-shadow: 0 4px 15px rgba(15, 163, 177, 0.1);
+    border-color: rgba(15, 163, 177, 0.2);
+    color: var(--ocean-teal);
+    text-decoration: none;
+}
+
+.status-badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.status-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.status-badge.online {
+    background: rgba(42, 157, 143, 0.1);
+    color: var(--forest-emerald);
+    border: 1px solid rgba(42, 157, 143, 0.3);
+}
+
+.status-badge.offline {
+    background: rgba(237, 106, 90, 0.1);
+    color: var(--coral-blush);
+    border: 1px solid rgba(237, 106, 90, 0.3);
+}
+
+.status-badge.warning {
+    background: rgba(255, 107, 53, 0.1);
+    color: var(--sunset-orange);
+    border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.activity-item {
+    border-left: 3px solid var(--ocean-teal);
+    padding-left: 15px;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    position: relative;
+}
+
+.activity-item::before {
+    content: '';
+    position: absolute;
+    left: -3px;
+    top: 0;
+    height: 100%;
+    width: 3px;
+    background: var(--gradient-ocean);
+    border-radius: 3px;
+}
+
+.activity-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 12px rgba(15, 163, 177, 0.08);
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: var(--deep-sapphire);
+    background: rgba(15, 163, 177, 0.03);
+    border-bottom: 2px solid var(--ocean-teal);
+    padding: 1rem 0.75rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table td {
+    padding: 0.875rem 0.75rem;
+    border-bottom: 1px solid rgba(15, 163, 177, 0.1);
+    color: var(--charcoal-gray);
+    transition: all 0.2s ease;
+}
+
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(15, 163, 177, 0.02);
+}
+
+.table tbody tr:hover td {
+    color: var(--ocean-teal);
+}
+
+.btn-group .btn {
+    border-radius: 8px;
+    border: 1px solid rgba(15, 163, 177, 0.2);
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(15, 163, 177, 0.15);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    background: rgba(15, 163, 177, 0.03);
+    border-bottom: 1px solid rgba(15, 163, 177, 0.1);
+    padding: 1.25rem 1.5rem;
+    font-weight: 700;
+    color: var(--deep-sapphire);
+    font-size: 1.05rem;
+}
+
+/* Professional Animations */
+@keyframes subtle-glow {
+    0%, 100% { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+    50% { box-shadow: 0 2px 15px rgba(15, 163, 177, 0.15); }
+}
+
+.highlight-card {
+    animation: subtle-glow 3s ease-in-out infinite;
+}
+
+/* Progress Indicators */
+.progress-bar {
+    transition: width 0.6s ease;
+    background: var(--gradient-ocean);
+}
+
+/* Loading States */
+.skeleton-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Metric Highlights */
+.metric-highlight {
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-highlight::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 20px 20px 0;
+    border-color: transparent var(--ocean-teal) transparent transparent;
+    opacity: 0.8;
+}
+
+/* Focus States for Accessibility */
+.admin-card:focus-within,
+.quick-action:focus {
+    outline: 2px solid var(--ocean-teal);
+    outline-offset: 2px;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+    .admin-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+    }
+    
+    .quick-action:hover {
+        transform: translateX(2px);
+    }
+}
+
+/* Professional Color Variations */
+.card-primary {
+    border-left-color: var(--ocean-teal);
+}
+
+.card-success {
+    border-left-color: var(--forest-emerald);
+}
+
+.card-warning {
+    border-left-color: var(--sunset-orange);
+}
+
+.card-danger {
+    border-left-color: var(--coral-blush);
+}
+</style>
+{% endblock %}

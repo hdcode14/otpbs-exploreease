@@ -1,0 +1,435 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Packages - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-balance-scale"></i> Compare Packages</h1>
+                <a href="{{ url_for('packages') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add More Packages
+                </a>
+            </div>
+            <p class="text-muted">Compare travel packages to find the perfect one for your trip.</p>
+        </div>
+    </div>
+
+    {% if packages %}
+    <div class="row">
+        <div class="col-12">
+            <!-- Comparison Table -->
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Package Comparison</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 200px;">Features</th>
+                                    {% for package in packages %}
+                                    <th class="text-center">
+                                        <div class="package-header">
+                                            <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                                                 alt="{{ package[1] }}" class="img-fluid rounded mb-2" style="max-height: 100px;">
+                                            <h6 class="mb-1">{{ package[1] }}</h6>
+                                            <div class="price-tag">
+                                                <span class="h5 text-primary">₹{{ "%.2f"|format(package[5]) }}</span>
+                                            </div>
+                                            <div class="mt-2">
+                                                <a href="{{ url_for('package_detail', package_id=package[0]) }}" 
+                                                   class="btn btn-sm btn-outline-primary me-1">
+                                                    Details
+                                                </a>
+                                                {% if current_user.is_authenticated %}
+                                                <a href="{{ url_for('book_package', package_id=package[0]) }}" 
+                                                   class="btn btn-sm btn-primary">
+                                                    Book Now
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Destination -->
+                                <tr>
+                                    <td class="fw-bold">Destination</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">{{ package[2] }}</td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Category -->
+                                <tr>
+                                    <td class="fw-bold">Category</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <span class="badge bg-info">{{ package[3] }}</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Duration -->
+                                <tr>
+                                    <td class="fw-bold">Duration</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">{{ package[4] }}</td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Price -->
+                                <tr>
+                                    <td class="fw-bold">Price</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <strong class="text-primary">₹{{ "%.2f"|format(package[5]) }}</strong>
+                                        <br>
+                                        <small class="text-muted">per person</small>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Rating -->
+                                <tr>
+                                    <td class="fw-bold">Rating</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="fas fa-star"></i> {{ package[6] }}/5
+                                        </span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Region -->
+                                <tr>
+                                    <td class="fw-bold">Region</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <span class="badge bg-dark">{{ package[11] }}</span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Available Slots -->
+                                <tr>
+                                    <td class="fw-bold">Available Slots</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <span class="badge bg-{% if package[14] > 10 %}success{% elif package[14] > 0 %}warning{% else %}danger{% endif %}">
+                                            {{ package[14] }} slots
+                                        </span>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Description -->
+                                <tr>
+                                    <td class="fw-bold">Description</td>
+                                    {% for package in packages %}
+                                    <td>
+                                        <p class="small text-muted mb-0">{{ package[9][:150] }}...</p>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Itinerary Preview -->
+                                <tr>
+                                    <td class="fw-bold">Itinerary Preview</td>
+                                    {% for package in packages %}
+                                    <td>
+                                        <ul class="small ps-3 mb-0">
+                                            {% set days = package[12].split('|') %}
+                                            {% for day in days[:3] %}
+                                            <li>{{ day.split(':')[0] if ':' in day else day }}</li>
+                                            {% endfor %}
+                                            {% if days|length > 3 %}
+                                            <li class="text-muted">+ {{ days|length - 3 }} more days</li>
+                                            {% endif %}
+                                        </ul>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Inclusions -->
+                                <tr>
+                                    <td class="fw-bold">What's Included</td>
+                                    {% for package in packages %}
+                                    <td>
+                                        <ul class="small ps-3 mb-0">
+                                            {% set inclusions = package[13].split('|') %}
+                                            {% for inclusion in inclusions[:4] %}
+                                            <li>{{ inclusion }}</li>
+                                            {% endfor %}
+                                            {% if inclusions|length > 4 %}
+                                            <li class="text-muted">+ {{ inclusions|length - 4 }} more</li>
+                                            {% endif %}
+                                        </ul>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                                
+                                <!-- Actions -->
+                                <tr>
+                                    <td class="fw-bold">Actions</td>
+                                    {% for package in packages %}
+                                    <td class="text-center">
+                                        <div class="btn-group-vertical btn-group-sm">
+                                            <a href="{{ url_for('package_detail', package_id=package[0]) }}" 
+                                               class="btn btn-outline-primary">
+                                                View Details
+                                            </a>
+                                            {% if current_user.is_authenticated %}
+                                            <a href="{{ url_for('add_to_wishlist', package_id=package[0]) }}" 
+                                               class="btn btn-outline-secondary">
+                                                <i class="fas fa-heart"></i> Wishlist
+                                            </a>
+                                            <a href="{{ url_for('book_package', package_id=package[0]) }}" 
+                                               class="btn btn-primary">
+                                                Book Now
+                                            </a>
+                                            {% else %}
+                                            <a href="{{ url_for('login') }}" class="btn btn-primary">
+                                                Login to Book
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    {% endfor %}
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommendation -->
+            <div class="card mt-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-award"></i> Our Recommendation</h5>
+                </div>
+                <div class="card-body">
+                    {% set best_package = packages|sort(attribute=6, reverse=true)|first %}
+                    <div class="row align-items-center">
+                        <div class="col-md-2 text-center">
+                            <img src="{{ url_for('static', filename='images/' + best_package[10]) }}" 
+                                 alt="{{ best_package[1] }}" class="img-fluid rounded" style="max-height: 100px;">
+                        </div>
+                        <div class="col-md-6">
+                            <h5>{{ best_package[1] }}</h5>
+                            <p class="text-muted mb-2">{{ best_package[2] }} • {{ best_package[4] }}</p>
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-warning text-dark me-2">
+                                    <i class="fas fa-star"></i> {{ best_package[6] }}/5
+                                </span>
+                                <span class="badge bg-success me-2">Best Value</span>
+                                <span class="h5 text-primary mb-0">₹{{ "%.2f"|format(best_package[5]) }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <a href="{{ url_for('package_detail', package_id=best_package[0]) }}" 
+                               class="btn btn-outline-primary me-2">
+                                View Details
+                            </a>
+                            {% if current_user.is_authenticated %}
+                            <a href="{{ url_for('book_package', package_id=best_package[0]) }}" 
+                               class="btn btn-success">
+                                Book This Package
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('login') }}" class="btn btn-success">
+                                Login to Book
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Packages Selected -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-balance-scale fa-4x text-muted mb-3"></i>
+                    <h3>No Packages Selected</h3>
+                    <p class="text-muted">Select packages to compare from the packages page.</p>
+                    <a href="{{ url_for('packages') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-search"></i> Browse Packages
+                    </a>
+                </div>
+            </div>
+            
+            <!-- How to Compare -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-info-circle"></i> How to Compare Packages</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="step-icon">
+                                <i class="fas fa-search fa-2x text-primary mb-2"></i>
+                                <h6>Browse Packages</h6>
+                                <p class="small text-muted">Explore our wide range of travel packages</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="step-icon">
+                                <i class="fas fa-plus fa-2x text-primary mb-2"></i>
+                                <h6>Select Packages</h6>
+                                <p class="small text-muted">Choose up to 3 packages to compare</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="step-icon">
+                                <i class="fas fa-balance-scale fa-2x text-primary mb-2"></i>
+                                <h6>Compare Features</h6>
+                                <p class="small text-muted">View detailed comparison of all features</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Highlight best value in each category
+    if ({{ packages|length }} > 0) {
+        highlightBestValues();
+    }
+
+    // Print comparison
+    function printComparison() {
+        window.print();
+    }
+
+    // Add print button
+    if ({{ packages|length }} > 0) {
+        const printBtn = document.createElement('button');
+        printBtn.className = 'btn btn-outline-secondary ms-2';
+        printBtn.innerHTML = '<i class="fas fa-print"></i> Print Comparison';
+        printBtn.onclick = printComparison;
+        document.querySelector('.d-flex').appendChild(printBtn);
+    }
+});
+
+function highlightBestValues() {
+    const rows = document.querySelectorAll('tbody tr');
+    const packagesCount = {{ packages|length }};
+    
+    // Price (lowest is best)
+    const priceRow = Array.from(rows).find(row => row.cells[0].textContent === 'Price');
+    if (priceRow) {
+        const prices = Array.from(priceRow.cells).slice(1).map(cell => {
+            const priceText = cell.querySelector('.text-primary').textContent;
+            return parseFloat(priceText.replace('₹', '').replace(',', ''));
+        });
+        const minPrice = Math.min(...prices);
+        priceRow.cells[prices.indexOf(minPrice) + 1].classList.add('table-success');
+    }
+    
+    // Rating (highest is best)
+    const ratingRow = Array.from(rows).find(row => row.cells[0].textContent === 'Rating');
+    if (ratingRow) {
+        const ratings = Array.from(ratingRow.cells).slice(1).map(cell => {
+            const ratingText = cell.querySelector('.badge').textContent;
+            return parseFloat(ratingText.split('/')[0]);
+        });
+        const maxRating = Math.max(...ratings);
+        ratingRow.cells[ratings.indexOf(maxRating) + 1].classList.add('table-success');
+    }
+    
+    // Available slots (highest is best)
+    const slotsRow = Array.from(rows).find(row => row.cells[0].textContent === 'Available Slots');
+    if (slotsRow) {
+        const slots = Array.from(slotsRow.cells).slice(1).map(cell => {
+            const slotsText = cell.querySelector('.badge').textContent;
+            return parseInt(slotsText.split(' ')[0]);
+        });
+        const maxSlots = Math.max(...slots);
+        slotsRow.cells[slots.indexOf(maxSlots) + 1].classList.add('table-success');
+    }
+}
+
+// Share comparison
+function shareComparison() {
+    const packageNames = Array.from(document.querySelectorAll('.package-header h6')).map(h6 => h6.textContent);
+    const shareText = `I'm comparing these travel packages on ExploreEase: ${packageNames.join(' vs ')}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Package Comparison',
+            text: shareText,
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(shareText + '\n' + window.location.href).then(() => {
+            alert('Comparison link copied to clipboard!');
+        });
+    }
+}
+</script>
+
+<style>
+.package-header {
+    padding: 15px;
+}
+
+.price-tag {
+    margin: 10px 0;
+}
+
+.table td {
+    vertical-align: middle;
+}
+
+.table-success {
+    background-color: #d1e7dd !important;
+}
+
+.step-icon {
+    padding: 20px;
+}
+
+.step-icon:hover {
+    transform: translateY(-5px);
+    transition: transform 0.3s ease;
+}
+
+@media print {
+    .navbar, .btn, .card-header, footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: 1px solid #000 !important;
+        box-shadow: none !important;
+    }
+    
+    .table-bordered {
+        border: 1px solid #000 !important;
+    }
+    
+    .table-bordered th,
+    .table-bordered td {
+        border: 1px solid #000 !important;
+    }
+}
+</style>
+{% endblock %}

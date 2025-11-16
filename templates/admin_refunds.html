@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Refund Requests - ExploreEase Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1><i class="fas fa-undo"></i> Refund Requests</h1>
+                <div class="btn-group">
+                    <button class="btn btn-outline-primary" onclick="filterRefunds('all')">All</button>
+                    <button class="btn btn-outline-warning" onclick="filterRefunds('Pending')">Pending</button>
+                    <button class="btn btn-outline-success" onclick="filterRefunds('Approved')">Approved</button>
+                    <button class="btn btn-outline-danger" onclick="filterRefunds('Rejected')">Rejected</button>
+                </div>
+            </div>
+            <p class="text-muted">Manage and process refund requests from customers.</p>
+        </div>
+    </div>
+
+    <!-- Refund Requests -->
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Refund Requests ({{ refund_requests|length }})</h5>
+        </div>
+        <div class="card-body">
+            {% if refund_requests %}
+            <div class="table-responsive">
+                <table class="table table-hover" id="refundsTable">
+                    <thead>
+                        <tr>
+                            <th>Request ID</th>
+                            <th>User</th>
+                            <th>Package</th>
+                            <th>Booking Amount</th>
+                            <th>Refund Amount</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Requested</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                        <tbody>
+                            {% for request in refund_requests %}
+                            <tr class="refund-row" data-status="{{ request[5] }}">
+                                <td>#{{ request[0] }}</td>
+                                <td>
+                                    <strong>{{ request[7] }}</strong>
+                                    <br>
+                                    <small class="text-muted">Booking #{{ request[1] }}</small>
+                                </td>
+                                <td>{{ request[8] }}</td>
+                                <td>
+                                    <strong class="text-primary">₹{{ "%.2f"|format(request[9]|float) }}</strong>
+                                </td>
+                                <td>
+                                    <strong class="text-success">₹{{ "%.2f"|format(request[4]|float) }}</strong>
+                                    <br>
+                                    <small class="text-muted">
+                                        {% set refund_amount = request[4]|float %}
+                                        {% set total_amount = request[9]|float %}
+                                        {% if total_amount > 0 %}
+                                            {{ ((refund_amount / total_amount) * 100)|round|int }}%
+                                        {% else %}
+                                            0%
+                                        {% endif %}
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="reason-preview" data-bs-toggle="tooltip" title="{{ request[3] }}">
+                                        {{ request[3][:50] }}{% if request[3]|length > 50 %}...{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if request[5] == 'Pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                    {% elif request[5] == 'Approved' %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% elif request[5] == 'Rejected' %}
+                                    <span class="badge bg-danger">Rejected</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ format_date(request[6]) }}</small>
+                                </td>
+                                <td>
+                                    {% if request[5] == 'Pending' %}
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a href="{{ url_for('process_refund', refund_id=request[0], action='approve') }}" 
+                                        class="btn btn-outline-success"
+                                        onclick="return confirm('Approve this refund request?')">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        <a href="{{ url_for('process_refund', refund_id=request[0], action='reject') }}" 
+                                        class="btn btn-outline-danger"
+                                        onclick="return confirm('Reject this refund request?')">
+                                            <i class="fas fa-times"></i>
+                                        </a>
+                                        <button class="btn btn-outline-info" 
+                                                onclick="viewRefundDetails({{ request[0] }})">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted small">
+                                        Processed: {{ format_date(request[7]) if request[7] else 'N/A' }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-undo fa-4x text-muted mb-3"></i>
+                <h4>No Refund Requests</h4>
+                <p class="text-muted">All refund requests have been processed.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Refund Statistics -->
+    {% if refund_requests %}
+    <div class="row mt-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Pending Requests
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ refund_requests|selectattr("4", "equalto", "Pending")|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Approved
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ refund_requests|selectattr("4", "equalto", "Approved")|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-danger border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                Rejected
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">
+                                {{ refund_requests|selectattr("4", "equalto", "Rejected")|list|length }}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-times-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card stat-card border-start border-info border-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Total Refunded
+                            </div>
+                                <div class="h5 mb-0 fw-bold text-gray-800">
+                                    ₹{{ "%.2f"|format(refund_requests|selectattr("5", "equalto", "Approved")|sum(attribute="4")|float) }}
+                                </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-rupee-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Refund Details Modal -->
+<div class="modal fade" id="refundDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Refund Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="refundDetailsContent">
+                <!-- Content will be loaded dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterRefunds(status) {
+    const rows = document.querySelectorAll('.refund-row');
+    rows.forEach(row => {
+        if (status === 'all' || row.dataset.status === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function viewRefundDetails(refundId) {
+    // In a real app, this would fetch details via AJAX
+    const modalContent = document.getElementById('refundDetailsContent');
+    modalContent.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading refund details...</p>
+        </div>
+    `;
+    
+    // Simulate API call
+    setTimeout(() => {
+        modalContent.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Request Information</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr><td><strong>Request ID:</strong></td><td>#${refundId}</td></tr>
+                        <tr><td><strong>Status:</strong></td><td><span class="badge bg-warning">Pending</span></td></tr>
+                        <tr><td><strong>Requested On:</strong></td><td>2024-01-15</td></tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <h6>Financial Details</h6>
+                    <table class="table table-sm table-borderless">
+                        <tr><td><strong>Booking Amount:</strong></td><td>₹15,999.00</td></tr>
+                        <tr><td><strong>Refund Amount:</strong></td><td>₹12,799.20</td></tr>
+                        <tr><td><strong>Refund Percentage:</strong></td><td>80%</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>Refund Reason</h6>
+                    <div class="alert alert-light">
+                        <p class="mb-0">This is a detailed reason provided by the customer for requesting a refund. The customer explained their situation in detail and provided all necessary information.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <h6>Admin Notes</h6>
+                    <textarea class="form-control" rows="3" placeholder="Add notes about this refund request..."></textarea>
+                </div>
+            </div>
+        `;
+    }, 1000);
+    
+    const modal = new bootstrap.Modal(document.getElementById('refundDetailsModal'));
+    modal.show();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add search functionality
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = 'Search refund requests...';
+    searchInput.className = 'form-control mb-3';
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.refund-row');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchTerm)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+    document.querySelector('.card-body').insertBefore(searchInput, document.querySelector('.table-responsive'));
+});
+</script>
+
+<style>
+.refund-row:hover {
+    background-color: #fff9e6;
+}
+
+.stat-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.reason-preview {
+    cursor: help;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}My Wishlist - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-heart text-danger"></i> My Wishlist</h1>
+                <div>
+                    <span class="badge bg-primary fs-6">{{ packages|length }} items</span>
+                    <a href="{{ url_for('packages') }}" class="btn btn-primary ms-2">
+                        <i class="fas fa-plus"></i> Explore More
+                    </a>
+                </div>
+            </div>
+
+            {% if packages %}
+            <div class="row">
+                {% for package in packages %}
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card h-100 wishlist-card">
+                        <div class="card-img-wrapper position-relative">
+                            <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                                 class="card-img-top" alt="{{ package[1] }}" style="height: 200px; object-fit: cover;">
+                            <div class="position-absolute top-0 end-0 p-2">
+                                <a href="{{ url_for('remove_from_wishlist', package_id=package[0]) }}" 
+                                   class="btn btn-danger btn-sm rounded-circle"
+                                   onclick="return confirm('Remove from wishlist?')">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            </div>
+                            <div class="position-absolute bottom-0 start-0 p-2">
+                                <span class="badge bg-{% if package[15] %}success{% else %}secondary{% endif %}">
+                                    {% if package[15] %}Available{% else %}Not Available{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title">{{ package[1] }}</h5>
+                                <span class="badge bg-primary">{{ package[4] }}</span>
+                            </div>
+                            <p class="card-text text-muted small">{{ package[9][:100] }}...</p>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="h5 text-primary">₹{{ "%.2f"|format(package[5]) }}</span>
+                                <span class="badge bg-warning text-dark">
+                                    <i class="fas fa-star"></i> {{ package[6] }}
+                                </span>
+                            </div>
+                            <div class="mb-3">
+                                <span class="badge bg-secondary">{{ package[3] }}</span>
+                                <span class="badge bg-info">{{ package[2] }}</span>
+                                <span class="badge bg-dark">{{ package[11] }}</span>
+                            </div>
+                            <div class="availability">
+                                <small class="text-muted">
+                                    <i class="fas fa-users"></i> {{ package[14] }} slots available
+                                </small>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('package_detail', package_id=package[0]) }}" 
+                                   class="btn btn-outline-primary">View Details</a>
+                                {% if package[15] and package[14] > 0 %}
+                                <a href="{{ url_for('book_package', package_id=package[0]) }}" 
+                                   class="btn btn-primary">Book Now</a>
+                                {% else %}
+                                <button class="btn btn-secondary" disabled>Not Available</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Clear All Button -->
+            <div class="text-center mt-4">
+                <a href="{{ url_for('packages') }}" class="btn btn-outline-primary me-2">
+                    <i class="fas fa-search"></i> Explore More Packages
+                </a>
+                {% if packages|length > 0 %}
+                <button class="btn btn-outline-danger" onclick="clearWishlist()">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-heart fa-4x text-muted mb-3"></i>
+                <h3>Your Wishlist is Empty</h3>
+                <p class="text-muted">Start adding your favorite travel packages to your wishlist!</p>
+                <a href="{{ url_for('packages') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search"></i> Explore Packages
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function clearWishlist() {
+    if (confirm('Are you sure you want to clear your entire wishlist?')) {
+        // This would need backend implementation for bulk removal
+        alert('This feature would remove all items from your wishlist. Currently, please remove items individually.');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to wishlist cards
+    const wishlistCards = document.querySelectorAll('.wishlist-card');
+    wishlistCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+
+    // Add confirmation for remove actions
+    const removeLinks = document.querySelectorAll('a[href*="remove_from_wishlist"]');
+    removeLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            if (!confirm('Remove this package from your wishlist?')) {
+                e.preventDefault();
+            }
+        });
+    });
+});
+
+// Share wishlist functionality
+function shareWishlist() {
+    const packageNames = Array.from(document.querySelectorAll('.card-title')).map(title => title.textContent);
+    const shareText = `Check out my travel wishlist on ExploreEase: ${packageNames.join(', ')}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'My Travel Wishlist',
+            text: shareText,
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(shareText).then(() => {
+            alert('Wishlist copied to clipboard!');
+        });
+    }
+}
+</script>
+
+<style>
+.wishlist-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.wishlist-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.card-img-wrapper {
+    overflow: hidden;
+}
+
+.card-img-wrapper img {
+    transition: transform 0.3s ease;
+}
+
+.wishlist-card:hover .card-img-wrapper img {
+    transform: scale(1.05);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    border: none;
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #c82333 0%, #bd2130 100%);
+    transform: scale(1.1);
+}
+</style>
+{% endblock %}

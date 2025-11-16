@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Request Refund - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('my_bookings') }}">My Bookings</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('booking_details', booking_id=booking.id) }}">Booking #{{ booking.id }}</a></li>
+                    <li class="breadcrumb-item active">Request Refund</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-undo"></i> Request Refund</h4>
+                </div>
+                <div class="card-body">
+                    <!-- Booking Summary -->
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">Booking Summary</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Package:</strong> {{ booking.package_name }}<br>
+                                <strong>Destination:</strong> {{ booking.destination }}<br>
+                                <strong>Travel Date:</strong> {{ booking.travel_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Travelers:</strong> {{ booking.guests }}<br>
+                                <strong>Total Amount:</strong> ₹{{ "%.2f"|format(booking.total_price) }}<br>
+                                <strong>Booked On:</strong> {{ booking.booking_date }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refund Policy -->
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Refund Policy</h6>
+                        <ul class="mb-0">
+                            <li>7+ days before travel: 80% refund</li>
+                            <li>3-7 days before travel: 50% refund</li>
+                            <li>Less than 3 days: No refund</li>
+                            <li>Refunds are processed within 3-5 business days</li>
+                        </ul>
+                    </div>
+
+                    <!-- Refund Calculator -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-calculator"></i> Estimated Refund</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <div class="refund-option">
+                                        <h5 class="text-success">80%</h5>
+                                        <p class="small mb-1">₹{{ "%.2f"|format(booking.total_price * 0.8) }}</p>
+                                        <small class="text-muted">7+ days before travel</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="refund-option">
+                                        <h5 class="text-warning">50%</h5>
+                                        <p class="small mb-1">₹{{ "%.2f"|format(booking.total_price * 0.5) }}</p>
+                                        <small class="text-muted">3-7 days before travel</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="refund-option">
+                                        <h5 class="text-danger">0%</h5>
+                                        <p class="small mb-1">₹0.00</p>
+                                        <small class="text-muted">Less than 3 days</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Refund Form -->
+                    <form method="POST" action="{{ url_for('request_refund', booking_id=booking.id) }}">
+                        <div class="mb-4">
+                            <label for="reason" class="form-label fw-bold">Reason for Refund *</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="5" 
+                                      placeholder="Please provide a detailed reason for your refund request..." 
+                                      required></textarea>
+                            <div class="form-text">
+                                Be specific about why you're requesting a refund. This helps us process your request faster.
+                            </div>
+                        </div>
+
+                        <!-- Refund Acknowledgment -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="acknowledge" required>
+                                <label class="form-check-label" for="acknowledge">
+                                    I understand that:
+                                    <ul class="small mt-2">
+                                        <li>The refund amount will be calculated based on our refund policy</li>
+                                        <li>Refunds are processed within 3-5 business days</li>
+                                        <li>The refund will be credited to the original payment method</li>
+                                        <li>This action cannot be undone once submitted</li>
+                                    </ul>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-paper-plane"></i> Submit Refund Request
+                            </button>
+                            <a href="{{ url_for('booking_details', booking_id=booking.id) }}" 
+                               class="btn btn-outline-secondary">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Support Information -->
+            <div class="card mt-4">
+                <div class="card-body text-center">
+                    <h6><i class="fas fa-headset"></i> Need Help?</h6>
+                    <p class="text-muted mb-2">Our support team is here to assist you with your refund request.</p>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <i class="fas fa-phone text-primary"></i>
+                            <p class="small mb-0">+1 234 567 890</p>
+                        </div>
+                        <div class="col-md-6">
+                            <i class="fas fa-envelope text-primary"></i>
+                            <p class="small mb-0">support@exploreease.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calculate days until travel
+    const travelDate = new Date('{{ booking.travel_date }}');
+    const today = new Date();
+    const daysUntilTravel = Math.ceil((travelDate - today) / (1000 * 60 * 60 * 24));
+    
+    // Highlight applicable refund option
+    const refundOptions = document.querySelectorAll('.refund-option');
+    refundOptions.forEach(option => {
+        const percentage = parseInt(option.querySelector('h5').textContent);
+        
+        if (daysUntilTravel >= 7 && percentage === 80) {
+            option.classList.add('active-refund');
+        } else if (daysUntilTravel >= 3 && daysUntilTravel < 7 && percentage === 50) {
+            option.classList.add('active-refund');
+        } else if (daysUntilTravel < 3 && percentage === 0) {
+            option.classList.add('active-refund');
+        }
+    });
+
+    // Show days calculation
+    const daysInfo = document.createElement('div');
+    daysInfo.className = 'text-center mt-3';
+    daysInfo.innerHTML = `
+        <p class="mb-0">
+            <strong>Days until travel:</strong> 
+            <span class="badge bg-${daysUntilTravel >= 7 ? 'success' : daysUntilTravel >= 3 ? 'warning' : 'danger'}">
+                ${daysUntilTravel} days
+            </span>
+        </p>
+    `;
+    document.querySelector('.card-body').insertBefore(daysInfo, document.querySelector('form'));
+});
+</script>
+
+<style>
+.refund-option {
+    padding: 15px;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.active-refund {
+    border-color: #ffc107;
+    background-color: #fff9e6;
+    transform: scale(1.05);
+}
+
+.btn-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    border: none;
+    color: #000;
+}
+
+.btn-warning:hover {
+    background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+    transform: translateY(-1px);
+}
+
+.alert-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+.alert-warning {
+    border-left: 4px solid #ffc107;
+}
+</style>
+{% endblock %}

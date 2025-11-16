@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block title %}{{ package[1] }} - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Package Header -->
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('packages') }}">Packages</a></li>
+                    <li class="breadcrumb-item active">{{ package[1] }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Package Image -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                     class="card-img-top" alt="{{ package[1] }}" style="max-height: 500px; object-fit: cover;">
+            </div>
+
+            <!-- Package Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4><i class="fas fa-info-circle"></i> Package Details</h4>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ package[9] }}</p>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>Destination Highlights</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-map-marker-alt text-primary"></i> <strong>Destination:</strong> {{ package[2] }}</li>
+                                <li><i class="fas fa-globe-asia text-primary"></i> <strong>Region:</strong> {{ package[11] }}</li>
+                                <li><i class="fas fa-tags text-primary"></i> <strong>Category:</strong> {{ package[3] }}</li>
+                                <li><i class="fas fa-clock text-primary"></i> <strong>Duration:</strong> {{ package[4] }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Package Features</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-star text-warning"></i> <strong>Rating:</strong> {{ package[6] }}/5</li>
+                                <li><i class="fas fa-users text-primary"></i> <strong>Available Slots:</strong> {{ package[14] }}</li>
+                                <li><i class="fas fa-rupee-sign text-success"></i> <strong>Price:</strong> ₹{{ "%.2f"|format(package[5]) }}</li>
+                                <li><i class="fas fa-map-marked-alt text-primary"></i> <strong>Coordinates:</strong> {{ package[7] }}, {{ package[8] }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Itinerary -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4><i class="fas fa-route"></i> Itinerary</h4>
+                </div>
+                <div class="card-body">
+                    <div class="itinerary-timeline">
+                        {% set days = package[12].split('|') %}
+                        {% for day in days %}
+                        <div class="timeline-item mb-3">
+                            <div class="timeline-badge bg-primary">
+                                <i class="fas fa-calendar-day"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">{{ day.split(':')[0] }}</h6>
+                                <p class="mb-0 text-muted">{{ day.split(':')[1] if ':' in day else day }}</p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inclusions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4><i class="fas fa-check-circle"></i> What's Included</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% set inclusions = package[13].split('|') %}
+                        {% for inclusion in inclusions %}
+                        <div class="col-md-6 mb-2">
+                            <i class="fas fa-check text-success"></i> {{ inclusion }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Booking Sidebar -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Book This Package</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h3 class="text-primary">₹{{ "%.2f"|format(package[5]) }}</h3>
+                        <p class="text-muted">per person</p>
+                    </div>
+
+                    <div class="package-info mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-clock text-primary"></i> Duration:</span>
+                            <strong>{{ package[4] }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-star text-warning"></i> Rating:</span>
+                            <strong>{{ package[6] }}/5</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><i class="fas fa-users text-primary"></i> Available:</span>
+                            <strong>{{ package[14] }} slots</strong>
+                        </div>
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                        {% if package[14] > 0 %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('book_package', package_id=package[0]) }}" 
+                               class="btn btn-primary btn-lg">
+                                <i class="fas fa-calendar-check"></i> Book Now
+                            </a>
+                            <a href="{{ url_for('add_to_wishlist', package_id=package[0]) }}" 
+                               class="btn btn-outline-secondary">
+                                <i class="fas fa-heart"></i> Add to Wishlist
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning text-center">
+                            <i class="fas fa-exclamation-triangle"></i><br>
+                            Fully Booked
+                        </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('login') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-sign-in-alt"></i> Login to Book
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary">
+                            Create Account
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <!-- Quick Actions -->
+                    <div class="mt-4">
+                        <h6>Quick Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-info btn-sm" onclick="sharePackage()">
+                                <i class="fas fa-share-alt"></i> Share Package
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="printPackage()">
+                                <i class="fas fa-print"></i> Print Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Similar Packages -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">Similar Packages</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Explore more packages in {{ package[11] }}</p>
+                    <a href="{{ url_for('packages') }}?region={{ package[11] }}" class="btn btn-outline-primary btn-sm">
+                        View All in {{ package[11] }}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function sharePackage() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ package[1] }} - ExploreEase',
+            text: 'Check out this amazing travel package!',
+            url: window.location.href
+        });
+    } else {
+        // Fallback: copy to clipboard
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            alert('Package link copied to clipboard!');
+        });
+    }
+}
+
+function printPackage() {
+    window.print();
+}
+
+// Add to wishlist with feedback
+document.addEventListener('DOMContentLoaded', function() {
+    const wishlistBtn = document.querySelector('a[href*="add_to_wishlist"]');
+    if (wishlistBtn) {
+        wishlistBtn.addEventListener('click', function(e) {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+        });
+    }
+});
+</script>
+
+<style>
+.timeline-item {
+    display: flex;
+    align-items: flex-start;
+}
+
+.timeline-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.timeline-content {
+    flex: 1;
+    padding-top: 5px;
+}
+
+.sticky-top {
+    z-index: 100;
+}
+
+@media print {
+    .navbar, .card-header, .btn, footer {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+</style>
+{% endblock %}

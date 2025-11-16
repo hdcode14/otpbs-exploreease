@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Book {{ package[1] }} - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('packages') }}">Packages</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('package_detail', package_id=package[0]) }}">{{ package[1] }}</a></li>
+                    <li class="breadcrumb-item active">Book Package</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Booking Form -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-calendar-check"></i> Book {{ package[1] }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('book_package', package_id=package[0]) }}">
+                        <!-- Travel Date -->
+                        <div class="mb-4">
+                            <label for="travel_date" class="form-label fw-bold">Travel Date *</label>
+                            <input type="date" class="form-control form-control-lg" id="travel_date" name="travel_date" 
+                                   min="{{ today }}" required>
+                            <div class="form-text">Select your preferred travel date</div>
+                        </div>
+
+                        <!-- Number of Travelers -->
+                        <div class="mb-4">
+                            <label for="travelers" class="form-label fw-bold">Number of Travelers *</label>
+                            <select class="form-select form-select-lg" id="travelers" name="travelers" required>
+                                <option value="">Select number of travelers</option>
+                                {% for i in range(1, 11) %}
+                                <option value="{{ i }}">{{ i }} traveler{% if i > 1 %}s{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Maximum 10 travelers per booking</div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Preferred Payment Method *</label>
+                            <div class="row">
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check card-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="card" value="card" checked>
+                                        <label class="form-check-label w-100" for="card">
+                                            <div class="card h-100 text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-credit-card fa-2x text-primary mb-2"></i>
+                                                    <h6>Credit/Debit Card</h6>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check card-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="upi" value="upi">
+                                        <label class="form-check-label w-100" for="upi">
+                                            <div class="card h-100 text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-mobile-alt fa-2x text-primary mb-2"></i>
+                                                    <h6>UPI Payment</h6>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check card-option">
+                                        <input class="form-check-input" type="radio" name="payment_method" id="netbanking" value="netbanking">
+                                        <label class="form-check-label w-100" for="netbanking">
+                                            <div class="card h-100 text-center">
+                                                <div class="card-body">
+                                                    <i class="fas fa-university fa-2x text-primary mb-2"></i>
+                                                    <h6>Net Banking</h6>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Terms and Conditions -->
+                        <div class="mb-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a> *
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-lock"></i> Proceed to Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Package Summary -->
+        <div class="col-lg-4">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header">
+                    <h5 class="mb-0">Package Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                             alt="{{ package[1] }}" class="img-fluid rounded" style="max-height: 150px;">
+                    </div>
+                    
+                    <h5>{{ package[1] }}</h5>
+                    <p class="text-muted">{{ package[2] }}</p>
+                    
+                    <div class="package-details">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Duration:</span>
+                            <strong>{{ package[4] }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Category:</span>
+                            <strong>{{ package[3] }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Price per person:</span>
+                            <strong>₹{{ "%.2f"|format(package[5]) }}</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Number of travelers:</span>
+                            <strong id="travelers-count">0</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Subtotal:</span>
+                            <strong id="subtotal">₹0.00</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Tax (18%):</span>
+                            <strong id="tax">₹0.00</strong>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><strong>Total Amount:</strong></span>
+                            <strong id="total-amount" class="text-primary">₹0.00</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h6>Booking Terms</h6>
+                <ul>
+                    <li>All bookings are subject to availability</li>
+                    <li>Full payment is required to confirm the booking</li>
+                    <li>Cancellation policy applies as per package terms</li>
+                    <li>Travel insurance is recommended</li>
+                    <li>Valid ID proof required during travel</li>
+                </ul>
+                
+                <h6>Cancellation Policy</h6>
+                <ul>
+                    <li>7+ days before travel: 80% refund</li>
+                    <li>3-7 days before travel: 50% refund</li>
+                    <li>Less than 3 days: No refund</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const pricePerPerson = {{ package[5] }};
+    const travelersSelect = document.getElementById('travelers');
+    const travelersCount = document.getElementById('travelers-count');
+    const subtotalElement = document.getElementById('subtotal');
+    const taxElement = document.getElementById('tax');
+    const totalAmountElement = document.getElementById('total-amount');
+
+    function calculateTotal() {
+        const travelers = parseInt(travelersSelect.value) || 0;
+        const subtotal = pricePerPerson * travelers;
+        const tax = subtotal * 0.18;
+        const total = subtotal + tax;
+
+        travelersCount.textContent = travelers;
+        subtotalElement.textContent = '₹' + subtotal.toFixed(2);
+        taxElement.textContent = '₹' + tax.toFixed(2);
+        totalAmountElement.textContent = '₹' + total.toFixed(2);
+    }
+
+    travelersSelect.addEventListener('change', calculateTotal);
+
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('travel_date').min = today;
+
+    // Payment method selection styling
+    const paymentOptions = document.querySelectorAll('.card-option');
+    paymentOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            paymentOptions.forEach(opt => {
+                opt.querySelector('.card').classList.remove('border-primary', 'bg-light');
+            });
+            this.querySelector('.card').classList.add('border-primary', 'bg-light');
+        });
+    });
+});
+</script>
+
+<style>
+.card-option .card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.card-option .card:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+}
+
+.card-option .form-check-input {
+    position: absolute;
+    opacity: 0;
+}
+
+.sticky-top {
+    z-index: 100;
+}
+</style>
+{% endblock %}

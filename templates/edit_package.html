@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ package[1] }} - ExploreEase Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin') }}">Admin</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('admin_packages') }}">Manage Packages</a></li>
+                    <li class="breadcrumb-item active">Edit {{ package[1] }}</li>
+                </ol>
+            </nav>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-edit"></i> Edit Travel Package</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('edit_package', package_id=package[0]) }}" enctype="multipart/form-data" id="packageForm">
+                        <!-- Basic Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Basic Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="name" class="form-label">Package Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ package[1] }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="destination" class="form-label">Destination *</label>
+                                <input type="text" class="form-control" id="destination" name="destination" 
+                                       value="{{ package[2] }}" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="Hill Station" {% if package[3] == 'Hill Station' %}selected{% endif %}>Hill Station</option>
+                                    <option value="Wildlife" {% if package[3] == 'Wildlife' %}selected{% endif %}>Wildlife</option>
+                                    <option value="Cultural" {% if package[3] == 'Cultural' %}selected{% endif %}>Cultural</option>
+                                    <option value="Nature" {% if package[3] == 'Nature' %}selected{% endif %}>Nature</option>
+                                    <option value="Adventure" {% if package[3] == 'Adventure' %}selected{% endif %}>Adventure</option>
+                                    <option value="Trekking" {% if package[3] == 'Trekking' %}selected{% endif %}>Trekking</option>
+                                    <option value="Beach" {% if package[3] == 'Beach' %}selected{% endif %}>Beach</option>
+                                    <option value="Heritage" {% if package[3] == 'Heritage' %}selected{% endif %}>Heritage</option>
+                                    <option value="Luxury" {% if package[3] == 'Luxury' %}selected{% endif %}>Luxury</option>
+                                    <option value="Leisure" {% if package[3] == 'Leisure' %}selected{% endif %}>Leisure</option>
+                                    <option value="Honeymoon" {% if package[3] == 'Honeymoon' %}selected{% endif %}>Honeymoon</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="duration" class="form-label">Duration *</label>
+                                <input type="text" class="form-control" id="duration" name="duration" 
+                                       value="{{ package[4] }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Pricing & Rating -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Pricing & Rating</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="price" class="form-label">Price (₹) *</label>
+                                <input type="number" class="form-control" id="price" name="price" 
+                                       value="{{ package[5] }}" min="0" step="0.01" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="rating" class="form-label">Rating (1-5) *</label>
+                                <input type="number" class="form-control" id="rating" name="rating" 
+                                       value="{{ package[6] }}" min="1" max="5" step="0.1" required>
+                                <div class="form-text">Rating should be between 1.0 and 5.0</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="available_slots" class="form-label">Available Slots *</label>
+                                <input type="number" class="form-control" id="available_slots" name="available_slots" 
+                                       value="{{ package[14] }}" min="0" max="100" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if package[15] %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">Package Active</label>
+                                </div>
+                                <div class="form-text">Deactivate to hide package from users</div>
+                            </div>
+                        </div>
+
+                        <!-- Location Information -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Location Information</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="latitude" class="form-label">Latitude *</label>
+                                <input type="number" class="form-control" id="latitude" name="latitude" 
+                                       value="{{ package[7] }}" step="0.0001" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="longitude" class="form-label">Longitude *</label>
+                                <input type="number" class="form-control" id="longitude" name="longitude" 
+                                       value="{{ package[8] }}" step="0.0001" required>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="region" class="form-label">Region *</label>
+                                <select class="form-select" id="region" name="region" required>
+                                    <option value="West Bengal" {% if package[11] == 'West Bengal' %}selected{% endif %}>West Bengal</option>
+                                    <option value="Northeast" {% if package[11] == 'Northeast' %}selected{% endif %}>Northeast India</option>
+                                    <option value="Other India" {% if package[11] == 'Other India' %}selected{% endif %}>Other India</option>
+                                    <option value="International" {% if package[11] == 'International' %}selected{% endif %}>International</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Package Details -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Package Details</h5>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="description" class="form-label">Description *</label>
+                                <textarea class="form-control" id="description" name="description" 
+                                          rows="4" required>{{ package[9] }}</textarea>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="itinerary" class="form-label">Itinerary *</label>
+                                <textarea class="form-control" id="itinerary" name="itinerary" 
+                                          rows="4" required>{{ package[12] }}</textarea>
+                                <div class="form-text">Separate each day with | character</div>
+                            </div>
+                            
+                            <div class="col-12 mb-3">
+                                <label for="inclusions" class="form-label">Inclusions *</label>
+                                <textarea class="form-control" id="inclusions" name="inclusions" 
+                                          rows="3" required>{{ package[13] }}</textarea>
+                                <div class="form-text">Separate each inclusion with | character</div>
+                            </div>
+                        </div>
+
+                        <!-- Image Upload -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h5 class="border-bottom pb-2">Package Image</h5>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="image" class="form-label">Current Image</label>
+                                <div>
+                                    <img src="{{ url_for('static', filename='images/' + package[10]) }}" 
+                                         alt="{{ package[1] }}" class="img-thumbnail" style="max-height: 150px;">
+                                    <div class="form-text mt-2">{{ package[10] }}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="image" class="form-label">Update Image</label>
+                                <input type="file" class="form-control" id="image" name="image" 
+                                       accept="image/*">
+                                <div class="form-text">Leave empty to keep current image</div>
+                                
+                                <div class="image-preview mt-3" id="imagePreview" style="display: none;">
+                                    <img id="previewImage" class="img-thumbnail" style="max-height: 150px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <a href="{{ url_for('admin_packages') }}" class="btn btn-secondary me-md-2">
+                                        <i class="fas fa-arrow-left"></i> Back to Packages
+                                    </a>
+                                    <button type="reset" class="btn btn-outline-secondary me-md-2">
+                                        <i class="fas fa-redo"></i> Reset Changes
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Update Package
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Package Statistics -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Package Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <h4 class="text-primary">{{ package[14] }}</h4>
+                                <small class="text-muted">Available Slots</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <h4 class="text-success">{{ package[6] }}/5</h4>
+                                <small class="text-muted">Rating</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <h4 class="text-info">₹{{ "%.2f"|format(package[5]) }}</h4>
+                                <small class="text-muted">Price</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-item">
+                                <h4 class="text-{% if package[15] %}success{% else %}secondary{% endif %}">
+                                    {% if package[15] %}Active{% else %}Inactive{% endif %}
+                                </h4>
+                                <small class="text-muted">Status</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image preview
+    const imageInput = document.getElementById('image');
+    const imagePreview = document.getElementById('imagePreview');
+    const previewImage = document.getElementById('previewImage');
+
+    imageInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+                imagePreview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        } else {
+            imagePreview.style.display = 'none';
+        }
+    });
+
+    // Form validation
+    const form = document.getElementById('packageForm');
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validate rating
+        const rating = parseFloat(document.getElementById('rating').value);
+        if (rating < 1 || rating > 5) {
+            alert('Rating must be between 1.0 and 5.0');
+            isValid = false;
+        }
+
+        // Validate price
+        const price = parseFloat(document.getElementById('price').value);
+        if (price <= 0) {
+            alert('Price must be greater than 0');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
+    // Show confirmation when leaving page with unsaved changes
+    let formChanged = false;
+    const formInputs = form.querySelectorAll('input, textarea, select');
+    formInputs.forEach(input => {
+        input.addEventListener('input', () => formChanged = true);
+        input.addEventListener('change', () => formChanged = true);
+    });
+
+    window.addEventListener('beforeunload', function(e) {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
+</script>
+
+<style>
+.form-label {
+    font-weight: 600;
+}
+
+.border-bottom {
+    border-color: #dee2e6 !important;
+}
+
+.image-preview {
+    border: 2px dashed #dee2e6;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+}
+
+.stat-item {
+    padding: 15px;
+}
+
+.stat-item h4 {
+    margin-bottom: 5px;
+}
+
+.form-switch .form-check-input {
+    width: 3em;
+    height: 1.5em;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #0a58ca 0%, #084298 100%);
+    transform: translateY(-1px);
+}
+</style>
+{% endblock %}

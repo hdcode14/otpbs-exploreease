@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}My Bookings - ExploreEase{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="fas fa-suitcase"></i> My Bookings</h1>
+                <a href="{{ url_for('packages') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Book New Package
+                </a>
+            </div>
+
+            {% if bookings %}
+            <div class="row">
+                {% for booking in bookings %}
+                {# Correct indices based on debug output #}
+                {% set booking_id = booking[0] %}          {# 11: booking id #}
+                {% set user_id = booking[1] %}             {# 4: user_id #}
+                {% set package_id = booking[2] %}          {# 11: package_id #}
+                {% set travel_date = booking[11] %}        {# 2026-01-05: travel_date #}
+                {% set guests = booking[4] %}              {# 1: guests #}
+                {% set total_price = booking[5] %}         {# 95998.0: total_price #}
+                {% set status = booking[12] %}             {# Cancelled: status #}
+                {% set booking_date = booking[14] %}       {# 2025-11-13 09:30:33: booking_date #}
+                {% set package_name = booking[17] %}       {# Bangkok Getaway: p.name #}
+                {% set destination = booking[18] %}        {# Thailand: p.destination #}
+                {% set package_image = booking[19] %}      {# bangkok.jpg: p.image #}
+                
+                <div class="col-lg-6 mb-4">
+                    <div class="card booking-card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ package_name }}</h5>
+                            <span class="badge 
+                                {% if status == 'Confirmed' %}bg-success
+                                {% elif status == 'Pending' %}bg-warning
+                                {% elif status == 'Cancelled' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ status }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 text-center mb-3">
+                                    <img src="{{ url_for('static', filename='images/' + package_image) if package_image else url_for('static', filename='images/default.jpg') }}" 
+                                         alt="{{ package_name }}" 
+                                         class="img-fluid rounded" 
+                                         style="max-height: 100px; object-fit: cover;"
+                                         onerror="this.onerror=null; this.src='{{ url_for('static', filename='images/default.jpg') }}'">
+                                </div>
+                                <div class="col-md-8">
+                                    <div class="booking-details">
+                                        <div class="detail-item mb-2">
+                                            <strong><i class="fas fa-map-marker-alt"></i> Destination:</strong> {{ destination }}
+                                        </div>
+                                        <div class="detail-item mb-2">
+                                            <strong><i class="fas fa-calendar-alt"></i> Travel Date:</strong> 
+                                            {% if travel_date and travel_date != "N/A" %}
+                                                {{ travel_date }}
+                                            {% else %}
+                                                Not specified
+                                            {% endif %}
+                                        </div>
+                                        <div class="detail-item mb-2">
+                                            <strong><i class="fas fa-users"></i> Travelers:</strong> 
+                                            {{ guests }} guest{% if guests != 1 %}s{% endif %}
+                                        </div>
+                                        <div class="detail-item mb-2">
+                                            <strong><i class="fas fa-rupee-sign"></i> Total Cost:</strong> 
+                                            <span class="text-primary fw-bold">₹{{ "%.2f"|format(total_price|float) }}</span>
+                                        </div>
+                                        <div class="detail-item mb-2">
+                                            <strong><i class="fas fa-clock"></i> Booked On:</strong> 
+                                            {% if booking_date and booking_date != "N/A" %}
+                                                {{ booking_date }}
+                                            {% else %}
+                                                Not specified
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{{ url_for('booking_details', booking_id=booking_id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i> Details
+                                </a>
+                                {% if status == 'Confirmed' %}
+                                <a href="{{ url_for('generate_e_ticket', booking_id=booking_id) }}" 
+                                   class="btn btn-outline-success btn-sm">
+                                    <i class="fas fa-download"></i> E-Ticket
+                                </a>
+                                <a href="{{ url_for('generate_invoice', booking_id=booking_id) }}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-file-invoice"></i> Invoice
+                                </a>
+                                {% if status != 'Refunded' %}
+                                <a href="{{ url_for('request_refund', booking_id=booking_id) }}" 
+                                   class="btn btn-outline-warning btn-sm">
+                                    <i class="fas fa-undo"></i> Refund
+                                </a>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-suitcase fa-4x text-muted mb-3"></i>
+                <h3>No Bookings Yet</h3>
+                <p class="text-muted">You haven't made any bookings yet. Start exploring our amazing packages!</p>
+                <a href="{{ url_for('packages') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-search"></i> Explore Packages
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add hover effects to booking cards
+    const bookingCards = document.querySelectorAll('.booking-card');
+    bookingCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '';
+        });
+    });
+
+    // Filter bookings by status
+    window.filterBookings = function(status) {
+        const cards = document.querySelectorAll('.booking-card');
+        const buttons = document.querySelectorAll('.filter-btn');
+        
+        // Update active button
+        buttons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.textContent.includes(status) || (status === 'all' && btn.textContent.includes('All'))) {
+                btn.classList.add('active');
+            }
+        });
+        
+        // Filter cards
+        cards.forEach(card => {
+            const badge = card.querySelector('.badge');
+            if (status === 'all' || badge.textContent.trim() === status) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Add filter buttons if there are bookings
+    const bookingCardsExist = document.querySelectorAll('.booking-card').length > 0;
+    if (bookingCardsExist) {
+        const filterContainer = document.createElement('div');
+        filterContainer.className = 'mb-3';
+        filterContainer.innerHTML = `
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active filter-btn" onclick="filterBookings('all')">All</button>
+                <button type="button" class="btn btn-outline-success filter-btn" onclick="filterBookings('Confirmed')">Confirmed</button>
+                <button type="button" class="btn btn-outline-warning filter-btn" onclick="filterBookings('Pending')">Pending</button>
+                <button type="button" class="btn btn-outline-danger filter-btn" onclick="filterBookings('Cancelled')">Cancelled</button>
+            </div>
+        `;
+        
+        document.querySelector('.d-flex.justify-content-between').after(filterContainer);
+    }
+});
+</script>
+
+<style>
+.booking-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.booking-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.booking-details {
+    font-size: 0.9rem;
+}
+
+.detail-item {
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f8f9fa;
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.btn-group .btn {
+    border-radius: 0;
+    flex: 1;
+}
+
+.btn-group .btn:first-child {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.btn-group .btn:last-child {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+.card-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+.filter-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.detail-item strong {
+    min-width: 120px;
+    display: inline-block;
+}
+</style>
+{% endblock %}

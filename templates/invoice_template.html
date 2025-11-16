@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice #{{ booking.id }} - ExploreEase</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #0d6efd;
+            padding-bottom: 20px;
+        }
+        .company-info {
+            margin-bottom: 30px;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 25px;
+        }
+        .section-title {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+            font-weight: bold;
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .badge-success {
+            background-color: #d1e7dd;
+            color: #0f5132;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>ExploreEase Travels</h1>
+        <p>Your Trusted Travel Companion</p>
+    </div>
+
+    <!-- Company Information -->
+    <div class="company-info">
+        <p><strong>ExploreEase Travels Pvt. Ltd.</strong></p>
+        <p>123 Travel Street, Tourism City</p>
+        <p>Mumbai, Maharashtra - 400001</p>
+        <p>Phone: +91 22 1234 5678 | Email: info@exploreease.com</p>
+        <p>GSTIN: 27AAAAA0000A1Z5</p>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div>
+            <h3>INVOICE</h3>
+            <p><strong>Invoice No:</strong> INV-{{ booking.id }}</p>
+            <p><strong>Invoice Date:</strong> {{ booking.payment_date }}</p>
+        </div>
+        <div>
+            <p><strong>Booking ID:</strong> #{{ booking.id }}</p>
+            <p><strong>Transaction ID:</strong> {{ booking.transaction_id }}</p>
+            <p><strong>Status:</strong> <span class="badge badge-success">PAID</span></p>
+        </div>
+    </div>
+
+    <!-- Customer Information -->
+    <div class="section">
+        <div class="section-title">Customer Information</div>
+        <table>
+            <tr>
+                <td><strong>Customer Name:</strong></td>
+                <td>{{ booking.user_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Email:</strong></td>
+                <td>{{ booking.user_email }}</td>
+            </tr>
+            <tr>
+                <td><strong>Customer ID:</strong></td>
+                <td>#{{ booking.user_id }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Package Details -->
+    <div class="section">
+        <div class="section-title">Package Details</div>
+        <table>
+            <tr>
+                <td><strong>Package Name:</strong></td>
+                <td>{{ booking.package_name }}</td>
+            </tr>
+            <tr>
+                <td><strong>Destination:</strong></td>
+                <td>{{ booking.destination }}</td>
+            </tr>
+            <tr>
+                <td><strong>Duration:</strong></td>
+                <td>{{ booking.duration }}</td>
+            </tr>
+            <tr>
+                <td><strong>Travel Date:</strong></td>
+                <td>{{ booking.travel_date }}</td>
+            </tr>
+            <tr>
+                <td><strong>Number of Travelers:</strong></td>
+                <td>{{ booking.guests }} person(s)</td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Payment Details -->
+    <div class="section">
+        <div class="section-title">Payment Details</div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th class="text-right">Amount (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Package Price ({{ booking.guests }} travelers)</td>
+                    <td class="text-right">{{ "%.2f"|format(booking.total_price) }}</td>
+                </tr>
+                <tr>
+                    <td>Tax (18% GST)</td>
+                    <td class="text-right">{{ "%.2f"|format(booking.total_price * 0.18) }}</td>
+                </tr>
+                <tr class="total-row">
+                    <td><strong>Total Amount</strong></td>
+                    <td class="text-right"><strong>₹{{ "%.2f"|format(booking.total_price * 1.18) }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Payment Method -->
+    <div class="section">
+        <div class="section-title">Payment Information</div>
+        <table>
+            <tr>
+                <td><strong>Payment Method:</strong></td>
+                <td>{{ booking.payment_method|title }}</td>
+            </tr>
+            <tr>
+                <td><strong>Payment Date:</strong></td>
+                <td>{{ booking.payment_date }}</td>
+            </tr>
+            <tr>
+                <td><strong>Payment Status:</strong></td>
+                <td><span class="badge badge-success">COMPLETED</span></td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- Terms and Conditions -->
+    <div class="section">
+        <div class="section-title">Terms & Conditions</div>
+        <ul style="font-size: 0.9em; color: #666;">
+            <li>This is a computer-generated invoice and does not require a physical signature.</li>
+            <li>All amounts are in Indian Rupees (₹).</li>
+            <li>Taxes are included as applicable by Indian law.</li>
+            <li>For any queries regarding this invoice, please contact our support team.</li>
+            <li>Cancellation and refund policies apply as per terms and conditions.</li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Thank you for choosing ExploreEase for your travel needs!</p>
+        <p>📞 +91 22 1234 5678 | ✉️ support@exploreease.com | 🌐 www.exploreease.com</p>
+        <p><em>This invoice was generated on: {{ now }}</em></p>
+    </div>
+</body>
+</html>
