@@ -30,14 +30,15 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # ==================== DATABASE CONNECTION FUNCTION ====================
+# ==================== DATABASE CONNECTION FUNCTION ====================
 def get_db_connection():
     """
     Universal database connection that works on both local and Render
-    Uses /tmp directory on Render which persists between requests
+    Uses persistent disk on Render which survives redeploys
     """
     if 'RENDER' in os.environ:
-        # On Render - use /tmp directory which persists
-        db_path = '/tmp/database.db'
+        # On Render - use persistent disk
+        db_path = '/opt/render/data/database.db'
         print("🟢 Using Render SQLite database at:", db_path)
     else:
         # Local development
@@ -47,6 +48,7 @@ def get_db_connection():
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
+# ==================== END DATABASE CONNECTION ====================
 # ==================== END DATABASE CONNECTION ====================
 
 def debug_database_state():
