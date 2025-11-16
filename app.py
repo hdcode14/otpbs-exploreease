@@ -20,6 +20,230 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'exploreease-secret-key-
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ADMIN_SECRET_KEY'] = os.environ.get('ADMIN_SECRET_KEY', 'admin123')
 
+# ==================== DATABASE CONNECTION FUNCTION ====================
+def get_db_connection():
+    """
+    Universal database connection that works on both local and Render
+    Uses persistent disk on Render which survives redeploys
+    """
+    if 'RENDER' in os.environ:
+        # On Render - use persistent disk
+        db_path = '/opt/render/data/database.db'
+        # Ensure directory exists
+        os.makedirs('/opt/render/data', exist_ok=True)
+        print("🟢 Using Render SQLite database at:", db_path)
+    else:
+        # Local development
+        db_path = 'database.db'
+        print("🟢 Using local SQLite database at:", db_path)
+    
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    c = conn.cursor()
+    
+    # Existing tables creation code...
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL,
+                  email TEXT UNIQUE NOT NULL,
+                  password TEXT NOT NULL,
+                  is_admin BOOLEAN DEFAULT FALSE,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS packages
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  name TEXT NOT NULL,
+                  destination TEXT NOT NULL,
+                  category TEXT NOT NULL,
+                  duration TEXT NOT NULL,
+                  price REAL NOT NULL,
+                  rating REAL NOT NULL,
+                  latitude REAL NOT NULL,
+                  longitude REAL NOT NULL,
+                  description TEXT NOT NULL,
+                  image TEXT NOT NULL,
+                  region TEXT NOT NULL,
+                  itinerary TEXT NOT NULL,
+                  inclusions TEXT NOT NULL,
+                  available_slots INTEGER DEFAULT 50,
+                  is_active BOOLEAN DEFAULT TRUE,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS wishlist
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER NOT NULL,
+                  package_id INTEGER NOT NULL,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES users(id),
+                  FOREIGN KEY (package_id) REFERENCES packages(id),
+                  UNIQUE(user_id, package_id))''')
+    
+    # UPDATED BOOKINGS TABLE WITH ALL COLUMNS
+    c.execute('''CREATE TABLE IF NOT EXISTS bookings
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  user_id INTEGER NOT NULL,
+                  package_id INTEGER NOT NULL,
+                  guests INTEGER DEFAULT 1,
+                  travelers INTEGER DEFAULT 1,
+                  total_price REAL DEFAULT 0.0,  
+                  total_cost REAL DEFAULT 0.0,  
+                  amount REAL DEFAULT 0.0,       
+                  price REAL DEFAULT 0.0,        
+                  booking_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  booked_on DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  travel_date DATETIME,
+                  status TEXT DEFAULT 'confirmed',
+                  payment_status TEXT DEFAULT 'pending',
+                  refund_amount REAL DEFAULT 0.0,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (user_id) REFERENCES users(id),
+                  FOREIGN KEY (package_id) REFERENCES packages(id))''')
+    
+    c.execute('''CREATE TABLE IF NOT EXISTS payments
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  booking_id INTEGER NOT NULL,
+                  user_id INTEGER NOT NULL,
+                  amount REAL NOT NULL,
+                  payment_method TEXT NOT NULL,
+                  status TEXT DEFAULT 'pending',
+                  transaction_id TEXT UNIQUE,
+                  payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  FOREIGN KEY (booking_id) REFERENCES bookings(id),
+                  FOREIGN KEY (user_id) REFERENCES users(id))''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS refund_requests
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  booking_id INTEGER NOT NULL,
+                  user_id INTEGER NOT NULL,
+                  reason TEXT NOT NULL,
+                  refund_amount REAL DEFAULT 0.0,
+                  status TEXT DEFAULT 'Pending',
+                  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  processed_at DATETIME,
+                  FOREIGN KEY (booking_id) REFERENCES bookings(id),
+                  FOREIGN KEY (user_id) REFERENCES users(id))''')
+    
+    # Check if packages already exist to avoid duplicates - FIXED VERSION
+    c.execute('SELECT COUNT(*) FROM packages')
+    package_count = c.fetchone()[0]
+    
+    # Only insert sample packages if table is empty
+    if package_count == 0:
+        packages = [
+            # West Bengal
+            ('Darjeeling Delight', 'Darjeeling', 'Hill Station', '5D / 4N', 14999, 4.7, 
+             27.0360, 88.2627, 'Experience the queen of hills with breathtaking views of Kanchenjunga and lush tea gardens.', 
+             'darjeeling.jpg', 'West Bengal',
+             'Day 1: Arrival & Local Sightseeing|Day 2: Tiger Hill & Batasia Loop|Day 3: Ghoom Monastery|Day 4: Tea Garden Visit|Day 5: Departure',
+             'Accommodation|Meals|Transport|Guide|Entry Fees'),
+            
+            ('Sundarban Safari', 'South 24 Parganas', 'Wildlife', '3D / 2N', 9499, 4.5,
+             21.9497, 88.9401, 'Explore the mystical mangrove forests and spot the Royal Bengal Tiger in their natural habitat.', 
+             'sundarban.jpg', 'West Bengal',
+             'Day 1: Arrival & Boat Safari|Day 2: Tiger Spotting & Bird Watching|Day 3: Village Tour & Departure',
+             'Accommodation|All Meals|Boat Safari|Guide|Permits'),
+            
+            ('Kolkata Heritage Walk', 'Kolkata', 'Cultural', '2D / 1N', 6999, 4.6,
+             22.5726, 88.3639, 'Discover the cultural capital of India with its colonial architecture and rich history.', 
+             'kolkata.jpg', 'West Bengal',
+             'Day 1: Victoria Memorial & Park Street|Day 2: Howrah Bridge & Kalighat Temple',
+             'Hotel Stay|Breakfast|Transport|Guide|Entry Fees'),
+            
+            # Northeast India
+            ('Majestic Meghalaya', 'Shillong & Cherrapunjee', 'Nature', '6D / 5N', 18499, 4.8,
+             25.5788, 91.8933, 'Witness the living root bridges and stunning waterfalls in the abode of clouds.', 
+             'meghalaya.jpg', 'Northeast',
+             'Day 1: Arrival in Shillong|Day 2: Cherrapunjee Waterfalls|Day 3: Living Root Bridges|Day 4: Dawki River|Day 5: Local Markets|Day 6: Departure',
+             'Accommodation|All Meals|Transport|Guide|Activities'),
+            
+            ('Mystical Arunachal', 'Tawang', 'Adventure', '7D / 6N', 21999, 4.7,
+             27.5880, 91.8650, 'Explore the land of dawn-lit mountains with ancient monasteries and pristine landscapes.', 
+             'arunachal.jpg', 'Northeast',
+             'Day 1: Guwahati to Bomdila|Day 2: Bomdila to Tawang|Day 3: Tawang Monastery|Day 4: Madhuri Lake|Day 5: Bum La Pass|Day 6: Return Journey|Day 7: Departure',
+             'Accommodation|All Meals|Transport|Inner Line Permits|Guide'),
+            
+            ('Dzukou Dream Trail', 'Nagaland', 'Trekking', '5D / 4N', 16999, 4.6,
+             25.6514, 94.1058, 'Trek through the beautiful Dzukou Valley with its unique flora and stunning landscapes.', 
+             'dzuko.jpg', 'Northeast',
+             'Day 1: Arrival in Kohima|Day 2: Trek to Dzukou Valley|Day 3: Valley Exploration|Day 4: Return Trek|Day 5: Departure',
+             'Accommodation|All Meals|Trek Guide|Camping Equipment|Permits'),
+            
+            # Other India
+            ('Goa Beach Escape', 'Goa', 'Beach', '4D / 3N', 12999, 4.7,
+             15.2993, 74.1240, 'Relax on pristine beaches and experience Portuguese heritage in this tropical paradise.', 
+             'goa.jpg', 'Other India',
+             'Day 1: Arrival & Beach Visit|Day 2: North Goa Exploration|Day 3: South Goa Relaxation|Day 4: Departure',
+             'Beach Resort|Breakfast|Transport|Water Sports'),
+            
+            ('Himalayan Escape', 'Himachal', 'Adventure', '6D / 5N', 17999, 4.8,
+             31.1048, 77.1734, 'Experience the majestic Himalayas with adventure activities and scenic beauty.', 
+             'himachal.jpg', 'Other India',
+             'Day 1: Delhi to Manali|Day 2: Solang Valley|Day 3: Rohtang Pass|Day 4: Local Sightseeing|Day 5: Kasol Visit|Day 6: Departure',
+             'Accommodation|All Meals|Transport|Adventure Activities'),
+            
+            ('Royal Rajasthan', 'Jaipur–Udaipur–Jodhpur', 'Heritage', '6D / 5N', 19499, 4.7,
+             26.9124, 75.7873, 'Experience royal heritage with palaces, forts, and cultural experiences.', 
+             'rajasthan.jpg', 'Other India',
+             'Day 1: Jaipur Arrival|Day 2: Amber Fort & City Palace|Day 3: Udaipur Lake City|Day 4: Jodhpur Fort|Day 5: Desert Experience|Day 6: Departure',
+             'Heritage Hotels|All Meals|Transport|Guide|Cultural Shows'),
+            
+            # International
+            ('Discover Dubai', 'UAE', 'Luxury', '5D / 4N', 58999, 4.9,
+             25.2048, 55.2708, 'Experience luxury shopping, stunning architecture, and desert adventures.', 
+             'dubai.jpg', 'International',
+             'Day 1: Burj Khalifa & Dubai Mall|Day 2: Desert Safari|Day 3: Palm Jumeirah|Day 4: Abu Dhabi Day Trip|Day 5: Departure',
+             '5-Star Hotel|Breakfast|Sightseeing|Desert Safari|Visa Assistance'),
+            
+            ('Bangkok Getaway', 'Thailand', 'Leisure', '4D / 3N', 47999, 4.8,
+             13.7563, 100.5018, 'Explore vibrant street markets, ancient temples, and delicious street food.', 
+             'bangkok.jpg', 'International',
+             'Day 1: Arrival & Street Food Tour|Day 2: Grand Palace & Temples|Day 3: Floating Markets|Day 4: Departure',
+             'Hotel Stay|Breakfast|Tours|Airport Transfers'),
+            
+            ('Bali Bliss', 'Indonesia', 'Honeymoon', '6D / 5N', 64999, 4.9,
+             -8.4095, 115.1889, 'Perfect romantic getaway with beautiful beaches, temples, and luxury resorts.', 
+             'bali.jpg', 'International',
+             'Day 1: Arrival in Ubud|Day 2: Temple Tour|Day 3: Beach Day|Day 4: Water Sports|Day 5: Romantic Dinner|Day 6: Departure',
+             'Luxury Villa|All Meals|Private Transport|Spa Sessions')
+        ]
+        
+        for package in packages:
+            # Check if package already exists before inserting
+            c.execute('SELECT COUNT(*) FROM packages WHERE name = ? AND destination = ?', 
+                     (package[0], package[1]))
+            exists = c.fetchone()[0]
+            
+            if exists == 0:
+                c.execute('''INSERT INTO packages 
+                            (name, destination, category, duration, price, rating, latitude, longitude, 
+                             description, image, region, itinerary, inclusions) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', package)
+    
+    # Check if admin user exists
+    c.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('admin@exploreease.com',))
+    admin_exists = c.fetchone()[0]
+    
+    # Only create admin user if it doesn't exist
+    if admin_exists == 0:
+        admin_password = generate_password_hash('admin123')
+        c.execute('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, ?)',
+                  ('Admin User', 'admin@exploreease.com', admin_password, True))
+    
+    conn.commit()
+    conn.close()
+    print("Database initialized successfully with all required tables!")
+    
+    # Update schema to add any missing columns
+    update_database_schema()
+    verify_and_fix_payments_table()
+    debug_database_state()
+
 # ==================== DATABASE INITIALIZATION ====================
 def initialize_app():
     """Initialize the application including database setup"""
@@ -59,27 +283,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# ==================== DATABASE CONNECTION FUNCTION ====================
-def get_db_connection():
-    """
-    Universal database connection that works on both local and Render
-    Uses persistent disk on Render which survives redeploys
-    """
-    if 'RENDER' in os.environ:
-        # On Render - use persistent disk
-        db_path = '/opt/render/data/database.db'
-        # Ensure directory exists
-        os.makedirs('/opt/render/data', exist_ok=True)
-        print("🟢 Using Render SQLite database at:", db_path)
-    else:
-        # Local development
-        db_path = 'database.db'
-        print("🟢 Using local SQLite database at:", db_path)
-    
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
-
+# Rest of your helper functions (debug_database_state, verify_and_fix_payments_table, etc.)
 def debug_database_state():
     """Debug function to check database state"""
     conn = get_db_connection()
@@ -322,209 +526,6 @@ def update_database_schema():
         conn.rollback()
     finally:
         conn.close()
-
-def init_db():
-    conn = get_db_connection()
-    c = conn.cursor()
-    
-    # Existing tables creation code...
-    c.execute('''CREATE TABLE IF NOT EXISTS users
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT NOT NULL,
-                  email TEXT UNIQUE NOT NULL,
-                  password TEXT NOT NULL,
-                  is_admin BOOLEAN DEFAULT FALSE,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS packages
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  name TEXT NOT NULL,
-                  destination TEXT NOT NULL,
-                  category TEXT NOT NULL,
-                  duration TEXT NOT NULL,
-                  price REAL NOT NULL,
-                  rating REAL NOT NULL,
-                  latitude REAL NOT NULL,
-                  longitude REAL NOT NULL,
-                  description TEXT NOT NULL,
-                  image TEXT NOT NULL,
-                  region TEXT NOT NULL,
-                  itinerary TEXT NOT NULL,
-                  inclusions TEXT NOT NULL,
-                  available_slots INTEGER DEFAULT 50,
-                  is_active BOOLEAN DEFAULT TRUE,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP)''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS wishlist
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER NOT NULL,
-                  package_id INTEGER NOT NULL,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  FOREIGN KEY (user_id) REFERENCES users(id),
-                  FOREIGN KEY (package_id) REFERENCES packages(id),
-                  UNIQUE(user_id, package_id))''')
-    
-    # UPDATED BOOKINGS TABLE WITH ALL COLUMNS
-    c.execute('''CREATE TABLE IF NOT EXISTS bookings
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  user_id INTEGER NOT NULL,
-                  package_id INTEGER NOT NULL,
-                  guests INTEGER DEFAULT 1,
-                  travelers INTEGER DEFAULT 1,
-                  total_price REAL DEFAULT 0.0,  
-                  total_cost REAL DEFAULT 0.0,  
-                  amount REAL DEFAULT 0.0,       
-                  price REAL DEFAULT 0.0,        
-                  booking_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  booked_on DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  travel_date DATETIME,
-                  status TEXT DEFAULT 'confirmed',
-                  payment_status TEXT DEFAULT 'pending',
-                  refund_amount REAL DEFAULT 0.0,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  FOREIGN KEY (user_id) REFERENCES users(id),
-                  FOREIGN KEY (package_id) REFERENCES packages(id))''')
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS payments
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  booking_id INTEGER NOT NULL,
-                  user_id INTEGER NOT NULL,
-                  amount REAL NOT NULL,
-                  payment_method TEXT NOT NULL,
-                  status TEXT DEFAULT 'pending',
-                  transaction_id TEXT UNIQUE,
-                  payment_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  FOREIGN KEY (booking_id) REFERENCES bookings(id),
-                  FOREIGN KEY (user_id) REFERENCES users(id))''')
-
-    c.execute('''CREATE TABLE IF NOT EXISTS refund_requests
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  booking_id INTEGER NOT NULL,
-                  user_id INTEGER NOT NULL,
-                  reason TEXT NOT NULL,
-                  refund_amount REAL DEFAULT 0.0,
-                  status TEXT DEFAULT 'Pending',
-                  requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                  processed_at DATETIME,
-                  FOREIGN KEY (booking_id) REFERENCES bookings(id),
-                  FOREIGN KEY (user_id) REFERENCES users(id))''')
-    
-    # Check if packages already exist to avoid duplicates - FIXED VERSION
-    c.execute('SELECT COUNT(*) FROM packages')
-    package_count = c.fetchone()[0]
-    
-    # Only insert sample packages if table is empty
-    if package_count == 0:
-        packages = [
-            # West Bengal
-            ('Darjeeling Delight', 'Darjeeling', 'Hill Station', '5D / 4N', 14999, 4.7, 
-             27.0360, 88.2627, 'Experience the queen of hills with breathtaking views of Kanchenjunga and lush tea gardens.', 
-             'darjeeling.jpg', 'West Bengal',
-             'Day 1: Arrival & Local Sightseeing|Day 2: Tiger Hill & Batasia Loop|Day 3: Ghoom Monastery|Day 4: Tea Garden Visit|Day 5: Departure',
-             'Accommodation|Meals|Transport|Guide|Entry Fees'),
-            
-            ('Sundarban Safari', 'South 24 Parganas', 'Wildlife', '3D / 2N', 9499, 4.5,
-             21.9497, 88.9401, 'Explore the mystical mangrove forests and spot the Royal Bengal Tiger in their natural habitat.', 
-             'sundarban.jpg', 'West Bengal',
-             'Day 1: Arrival & Boat Safari|Day 2: Tiger Spotting & Bird Watching|Day 3: Village Tour & Departure',
-             'Accommodation|All Meals|Boat Safari|Guide|Permits'),
-            
-            ('Kolkata Heritage Walk', 'Kolkata', 'Cultural', '2D / 1N', 6999, 4.6,
-             22.5726, 88.3639, 'Discover the cultural capital of India with its colonial architecture and rich history.', 
-             'kolkata.jpg', 'West Bengal',
-             'Day 1: Victoria Memorial & Park Street|Day 2: Howrah Bridge & Kalighat Temple',
-             'Hotel Stay|Breakfast|Transport|Guide|Entry Fees'),
-            
-            # Northeast India
-            ('Majestic Meghalaya', 'Shillong & Cherrapunjee', 'Nature', '6D / 5N', 18499, 4.8,
-             25.5788, 91.8933, 'Witness the living root bridges and stunning waterfalls in the abode of clouds.', 
-             'meghalaya.jpg', 'Northeast',
-             'Day 1: Arrival in Shillong|Day 2: Cherrapunjee Waterfalls|Day 3: Living Root Bridges|Day 4: Dawki River|Day 5: Local Markets|Day 6: Departure',
-             'Accommodation|All Meals|Transport|Guide|Activities'),
-            
-            ('Mystical Arunachal', 'Tawang', 'Adventure', '7D / 6N', 21999, 4.7,
-             27.5880, 91.8650, 'Explore the land of dawn-lit mountains with ancient monasteries and pristine landscapes.', 
-             'arunachal.jpg', 'Northeast',
-             'Day 1: Guwahati to Bomdila|Day 2: Bomdila to Tawang|Day 3: Tawang Monastery|Day 4: Madhuri Lake|Day 5: Bum La Pass|Day 6: Return Journey|Day 7: Departure',
-             'Accommodation|All Meals|Transport|Inner Line Permits|Guide'),
-            
-            ('Dzukou Dream Trail', 'Nagaland', 'Trekking', '5D / 4N', 16999, 4.6,
-             25.6514, 94.1058, 'Trek through the beautiful Dzukou Valley with its unique flora and stunning landscapes.', 
-             'dzuko.jpg', 'Northeast',
-             'Day 1: Arrival in Kohima|Day 2: Trek to Dzukou Valley|Day 3: Valley Exploration|Day 4: Return Trek|Day 5: Departure',
-             'Accommodation|All Meals|Trek Guide|Camping Equipment|Permits'),
-            
-            # Other India
-            ('Goa Beach Escape', 'Goa', 'Beach', '4D / 3N', 12999, 4.7,
-             15.2993, 74.1240, 'Relax on pristine beaches and experience Portuguese heritage in this tropical paradise.', 
-             'goa.jpg', 'Other India',
-             'Day 1: Arrival & Beach Visit|Day 2: North Goa Exploration|Day 3: South Goa Relaxation|Day 4: Departure',
-             'Beach Resort|Breakfast|Transport|Water Sports'),
-            
-            ('Himalayan Escape', 'Himachal', 'Adventure', '6D / 5N', 17999, 4.8,
-             31.1048, 77.1734, 'Experience the majestic Himalayas with adventure activities and scenic beauty.', 
-             'himachal.jpg', 'Other India',
-             'Day 1: Delhi to Manali|Day 2: Solang Valley|Day 3: Rohtang Pass|Day 4: Local Sightseeing|Day 5: Kasol Visit|Day 6: Departure',
-             'Accommodation|All Meals|Transport|Adventure Activities'),
-            
-            ('Royal Rajasthan', 'Jaipur–Udaipur–Jodhpur', 'Heritage', '6D / 5N', 19499, 4.7,
-             26.9124, 75.7873, 'Experience royal heritage with palaces, forts, and cultural experiences.', 
-             'rajasthan.jpg', 'Other India',
-             'Day 1: Jaipur Arrival|Day 2: Amber Fort & City Palace|Day 3: Udaipur Lake City|Day 4: Jodhpur Fort|Day 5: Desert Experience|Day 6: Departure',
-             'Heritage Hotels|All Meals|Transport|Guide|Cultural Shows'),
-            
-            # International
-            ('Discover Dubai', 'UAE', 'Luxury', '5D / 4N', 58999, 4.9,
-             25.2048, 55.2708, 'Experience luxury shopping, stunning architecture, and desert adventures.', 
-             'dubai.jpg', 'International',
-             'Day 1: Burj Khalifa & Dubai Mall|Day 2: Desert Safari|Day 3: Palm Jumeirah|Day 4: Abu Dhabi Day Trip|Day 5: Departure',
-             '5-Star Hotel|Breakfast|Sightseeing|Desert Safari|Visa Assistance'),
-            
-            ('Bangkok Getaway', 'Thailand', 'Leisure', '4D / 3N', 47999, 4.8,
-             13.7563, 100.5018, 'Explore vibrant street markets, ancient temples, and delicious street food.', 
-             'bangkok.jpg', 'International',
-             'Day 1: Arrival & Street Food Tour|Day 2: Grand Palace & Temples|Day 3: Floating Markets|Day 4: Departure',
-             'Hotel Stay|Breakfast|Tours|Airport Transfers'),
-            
-            ('Bali Bliss', 'Indonesia', 'Honeymoon', '6D / 5N', 64999, 4.9,
-             -8.4095, 115.1889, 'Perfect romantic getaway with beautiful beaches, temples, and luxury resorts.', 
-             'bali.jpg', 'International',
-             'Day 1: Arrival in Ubud|Day 2: Temple Tour|Day 3: Beach Day|Day 4: Water Sports|Day 5: Romantic Dinner|Day 6: Departure',
-             'Luxury Villa|All Meals|Private Transport|Spa Sessions')
-        ]
-        
-        for package in packages:
-            # Check if package already exists before inserting
-            c.execute('SELECT COUNT(*) FROM packages WHERE name = ? AND destination = ?', 
-                     (package[0], package[1]))
-            exists = c.fetchone()[0]
-            
-            if exists == 0:
-                c.execute('''INSERT INTO packages 
-                            (name, destination, category, duration, price, rating, latitude, longitude, 
-                             description, image, region, itinerary, inclusions) 
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''', package)
-    
-    # Check if admin user exists
-    c.execute('SELECT COUNT(*) FROM users WHERE email = ?', ('admin@exploreease.com',))
-    admin_exists = c.fetchone()[0]
-    
-    # Only create admin user if it doesn't exist
-    if admin_exists == 0:
-        admin_password = generate_password_hash('admin123')
-        c.execute('INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, ?)',
-                  ('Admin User', 'admin@exploreease.com', admin_password, True))
-    
-    conn.commit()
-    conn.close()
-    print("Database initialized successfully with all required tables!")
-    
-    # Update schema to add any missing columns
-    update_database_schema()
-    verify_and_fix_payments_table()
-    debug_database_state()
 
 class User(UserMixin):
     def __init__(self, id, name, email, is_admin):
