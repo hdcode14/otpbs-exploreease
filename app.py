@@ -499,11 +499,6 @@ def init_db():
     verify_and_fix_payments_table()
     debug_database_state()
 
-# Initialize database only once when app starts
-# Initialize database on first request
-@app.before_first_request
-def initialize_database():
-    init_db()
 
 class User(UserMixin):
     def __init__(self, id, name, email, is_admin):
