@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: exploreease
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    disk:
+      name: data
+      mountPath: /opt/render/data
+      sizeGB: 1
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_SECRET_KEY
+        generateValue: true
