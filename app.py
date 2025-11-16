@@ -20,6 +20,36 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'exploreease-secret-key-
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['ADMIN_SECRET_KEY'] = os.environ.get('ADMIN_SECRET_KEY', 'admin123')
 
+# ==================== DATABASE INITIALIZATION ====================
+def initialize_app():
+    """Initialize the application including database setup"""
+    print("🟡 Starting application initialization...")
+    
+    # Create upload folder if it doesn't exist
+    if not os.path.exists(app.config['UPLOAD_FOLDER']):
+        os.makedirs(app.config['UPLOAD_FOLDER'])
+        print(f"🟢 Created upload folder: {app.config['UPLOAD_FOLDER']}")
+    
+    # Initialize database
+    init_db()
+    
+    # Verify database is accessible
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = c.fetchall()
+        print(f"🟢 Database verified. Tables: {[table[0] for table in tables]}")
+        conn.close()
+    except Exception as e:
+        print(f"🔴 Database verification failed: {e}")
+    
+    print("🟢 Application initialization complete!")
+
+# Call initialization function
+initialize_app()
+# ==================== END DATABASE INITIALIZATION ====================
+
 @app.context_processor
 def inject_now():
     return {'now': datetime.now()}
@@ -29,7 +59,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# ==================== DATABASE CONNECTION FUNCTION ====================
 # ==================== DATABASE CONNECTION FUNCTION ====================
 def get_db_connection():
     """
@@ -50,8 +79,6 @@ def get_db_connection():
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
-# ==================== END DATABASE CONNECTION ====================
-# ==================== END DATABASE CONNECTION ====================
 
 def debug_database_state():
     """Debug function to check database state"""
@@ -499,15 +526,6 @@ def init_db():
     verify_and_fix_payments_table()
     debug_database_state()
 
-@app.before_request
-def initialize_database_on_first_request():
-    """Initialize database on first request"""
-    if not hasattr(app, 'database_initialized'):
-        print("🟡 Initializing database on first request...")
-        init_db()
-        app.database_initialized = True
-        print("🟢 Database initialized successfully!")
-        
 class User(UserMixin):
     def __init__(self, id, name, email, is_admin):
         self.id = id
@@ -645,12 +663,17 @@ def logout():
 # Routes
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('SELECT * FROM packages WHERE is_active = TRUE LIMIT 6')
-    featured_packages = c.fetchall()
-    conn.close()
-    return render_template('index.html', packages=featured_packages)
+    try:
+        conn = get_db_connection()
+        c = conn.cursor()
+        c.execute('SELECT * FROM packages WHERE is_active = TRUE LIMIT 6')
+        featured_packages = c.fetchall()
+        conn.close()
+        return render_template('index.html', packages=featured_packages)
+    except Exception as e:
+        print(f"Error loading packages: {e}")
+        # Return empty packages list if there's an error
+        return render_template('index.html', packages=[])
 
 @app.route('/packages')
 def packages():
@@ -2231,9 +2254,5 @@ def test_payment(booking_id):
         return jsonify({"success": False, "error": "Payment creation failed"})
 
 if __name__ == '__main__':
-    # Create upload folder if it doesn't exist
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    
     port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port, debug=False)
