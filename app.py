@@ -499,7 +499,15 @@ def init_db():
     verify_and_fix_payments_table()
     debug_database_state()
 
-
+@app.before_request
+def initialize_database_on_first_request():
+    """Initialize database on first request"""
+    if not hasattr(app, 'database_initialized'):
+        print("🟡 Initializing database on first request...")
+        init_db()
+        app.database_initialized = True
+        print("🟢 Database initialized successfully!")
+        
 class User(UserMixin):
     def __init__(self, id, name, email, is_admin):
         self.id = id
