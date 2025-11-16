@@ -39,6 +39,8 @@ def get_db_connection():
     if 'RENDER' in os.environ:
         # On Render - use persistent disk
         db_path = '/opt/render/data/database.db'
+        # Ensure directory exists
+        os.makedirs('/opt/render/data', exist_ok=True)
         print("🟢 Using Render SQLite database at:", db_path)
     else:
         # Local development
